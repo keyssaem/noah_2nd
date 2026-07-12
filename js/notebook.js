@@ -179,7 +179,7 @@ const DevMode = {
     { label: '📚 거울1: 교실·노아 디자인', phase: 1, fn: () => {
       DevMode._bootstrap(1); Flow.enterClassroom1();
     }},
-    { label: '🔢 거울2: 수학 대결 (교실)', phase: 1, fn: async () => {
+    { label: '📝 거울2: 맞춤법 대결·편향 (교실)', phase: 1, fn: async () => {
       DevMode._bootstrap(1);
       await World.go('classroom', { x: 3.0, z: 4.8, ry: Math.PI });
       Flow.setupClassroomNPCs(true);
@@ -200,7 +200,7 @@ const DevMode = {
       Flow.setupClassroomNPCs(true);
       Flow.mirror3();
     }},
-    { label: '⚽ 거울4: 운동장·티볼', phase: 1, fn: () => {
+    { label: '⚽ 거울4: 운동장·티볼·모방 사건', phase: 1, fn: () => {
       DevMode._bootstrap(1); Flow.enterPlayground1();
     }},
     { label: '💾 복도1: 기록 저장소', phase: 1, fn: () => {
@@ -222,14 +222,14 @@ const DevMode = {
     { label: '💙 존중1: 교실·거절 연습', phase: 2, fn: () => {
       DevMode._bootstrap(2); Flow.enterClassroom2();
     }},
-    { label: '💙 존중2: 수학 팁 (교실)', phase: 2, fn: async () => {
+    { label: '💙 존중2: 일기 힌트·교정 (교실)', phase: 2, fn: async () => {
       DevMode._bootstrap(2);
       await World.go('classroom', { x: 3.0, z: 4.8, ry: Math.PI });
       Flow.setupClassroomNPCs(true);
       UI.setBond('respect', 20);
       Flow.respect2();
     }},
-    { label: '🎴 가위바위보 봉인판 (미니게임만)', phase: 2, fn: async () => {
+    { label: '💌 가위바위보 봉인판 (미니게임만)', phase: 2, fn: async () => {
       DevMode._bootstrap(2);
       await World.go('classroom', { x: 3.0, z: 4.8, ry: Math.PI });
       Flow.setupClassroomNPCs(true);
@@ -238,13 +238,13 @@ const DevMode = {
       await UI.dialogue(DATA.dlg.rps2_after);
       Flow.sysMsg('(DEV) 가위바위보 봉인판 테스트 끝');
     }},
-    { label: '🎈 기억 풍선 (미니게임만)', phase: 2, fn: async () => {
+    { label: '🪜 약속의 계단 (미니게임만)', phase: 2, fn: async () => {
       DevMode._bootstrap(2);
       await World.go('hallway', { x: -14, z: 0, ry: Math.PI / 2 });
-      await UI.dialogue(DATA.dlg.balloonIntro);
-      await Mini.balloonGame();
-      await UI.dialogue(DATA.dlg.balloonDone);
-      Flow.sysMsg('(DEV) 기억 풍선 테스트 끝');
+      await UI.dialogue(DATA.dlg.stairsIntro);
+      await Mini.stairsGame();
+      await UI.dialogue(DATA.dlg.stairsDone);
+      Flow.sysMsg('(DEV) 약속의 계단 테스트 끝');
     }},
     { label: '💙 존중3: 미술 자유 (교실)', phase: 2, fn: async () => {
       DevMode._bootstrap(2);
@@ -253,7 +253,7 @@ const DevMode = {
       UI.setBond('respect', 40);
       Flow.respect3();
     }},
-    { label: '⚽ 존중4: 팀편성·서연 에피소드', phase: 2, fn: () => {
+    { label: '⚽ 존중4: 팀편성·서연·하이파이브', phase: 2, fn: () => {
       DevMode._bootstrap(2); Flow.enterPlayground2();
     }},
     { label: '💙 복도2: 노아에게 따뜻한 말', phase: 2, fn: () => {
@@ -304,7 +304,7 @@ const DevMode = {
           <div class="dev-sec-title" style="background:#0d3a2a;color:#69f0ae;">▶ 도구 (P3)</div>
           <div class="dev-ep-list"><button class="dev-ep-btn" data-viewer="1">🎭 GLB 모델·애니메이션 뷰어</button></div>
         </div>
-        <p class="dev-warn">⚠ 점프 시 현재 진행 상황이 초기화됩니다. State 기본값으로 설정됩니다.</p>
+        
       </div>`);
 
     ov.querySelector('[data-viewer]').onclick = () => {

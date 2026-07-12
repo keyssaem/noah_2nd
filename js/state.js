@@ -14,6 +14,7 @@ const State = {
     ox2: '', ox2Reason: '',               // 6단계 O/X 재질문
     promises: [],                          // 나의 약속 3가지
     signature: '',                         // 서명 dataURL
+    schoolArt: '',                         // 존중편에서 직접 그린 '학교' 그림 dataURL (헌장에 삽입)
   },
 
   set(key, value) {

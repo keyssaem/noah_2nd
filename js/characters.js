@@ -87,10 +87,58 @@ const Chars = {
       ? this.person({ girl: true, hair: 0x5d4037, shirt: 0xff8fab, pants: 0xd6336c })
       : this.person({ hair: 0x212121, shirt: 0x4dabf7, pants: 0x37474f });
   },
-  donghyuk() { return this.person({ hair: 0x4e342e, shirt: 0x69db7c, pants: 0x2f4f4f }); },
-  chaewon() { return this.person({ girl: true, hair: 0x212121, shirt: 0xffd43b, pants: 0xe8590c }); },
-  seoyeon() { return this.person({ girl: true, hair: 0x6d4c41, shirt: 0xb197fc, pants: 0x7048e8 }); },
-  teacher() { return this.person({ hair: 0x6d4c41, shirt: 0x9775fa, pants: 0x495057, scale: 1.15 }); },
+  /* ───── 🏷️ 머리 위 이름표 (캔버스 스프라이트 — 항상 카메라를 향함, 벽 뒤에서도 보임) ───── */
+  nameTag(text, color = '#ffd43b', y = 2.0) {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 64;
+    const x = c.getContext('2d');
+    const w = 200, h = 46, r = 22, x0 = (256 - w) / 2, y0 = (64 - h) / 2;
+    x.fillStyle = 'rgba(15,23,42,.72)';               // 둥근 반투명 배경 (수동 라운드 — 구형 브라우저 대응)
+    x.beginPath();
+    x.moveTo(x0 + r, y0);
+    x.arcTo(x0 + w, y0, x0 + w, y0 + h, r);
+    x.arcTo(x0 + w, y0 + h, x0, y0 + h, r);
+    x.arcTo(x0, y0 + h, x0, y0, r);
+    x.arcTo(x0, y0, x0 + w, y0, r);
+    x.fill();
+    x.font = 'bold 34px Jua, "Gowun Dodum", sans-serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillStyle = color;
+    x.fillText(text, 128, 34);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(c), transparent: true, depthTest: false,
+    }));
+    sp.scale.set(1.35, 0.34, 1);
+    sp.position.y = y;
+    sp.renderOrder = 5;
+    return sp;
+  },
+
+  donghyuk() {
+    const ch = this.person({ hair: 0x4e342e, shirt: 0x69db7c, pants: 0x2f4f4f });
+    ch.group.add(this.nameTag('동혁', '#8ce99a'));
+    return ch;
+  },
+  chaewon() {
+    const ch = this.person({ girl: true, hair: 0x212121, shirt: 0xffd43b, pants: 0xe8590c });
+    ch.group.add(this.nameTag('채원', '#ffd43b'));
+    return ch;
+  },
+  seoyeon() {
+    const ch = this.person({ girl: true, hair: 0x6d4c41, shirt: 0xb197fc, pants: 0x7048e8 });
+    ch.group.add(this.nameTag('서연', '#d0bfff'));
+    return ch;
+  },
+  /* 🧑‍🏫 선생님 — GLB(키 1.8, 둘러보기 대기) 우선, 실패 시 박스 폴백 */
+  teacher() {
+    if (typeof Assets !== 'undefined' && Assets.isLoaded('teacher')) {
+      const ch = this.glbChar('teacher', { height: 1.8, clips: this.CLIPS.teacher });
+      if (ch) { ch.group.add(this.nameTag('선생님', '#ffffff', 2.12)); return ch; }
+    }
+    const ch = this.person({ hair: 0x6d4c41, shirt: 0x9775fa, pants: 0x495057, scale: 1.15 });
+    ch.group.add(this.nameTag('선생님', '#ffffff', 1.92));
+    return ch;
+  },
   student(i) {
     const shirts = [0xff8787, 0x74c0fc, 0x63e6be, 0xffd43b, 0xb197fc, 0xffa94d];
     return this.person({ girl: i % 2 === 1, hair: [0x212121, 0x4e342e, 0x5d4037][i % 3], shirt: shirts[i % 6], pants: 0x455a64, scale: 0.95 });

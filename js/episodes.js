@@ -24,7 +24,8 @@ const Flow = {
   /* ═══════ 1-3 집에서 시작 ═══════ */
   async begin() {
     this.phase = 1; this.step = 'home';
-    this.logsRead = false; this.logs5Read = false; this._chatIdx = 0;
+    this.logsRead = false; this.logs5Read = false; this._chatIdx = 0; this._chatBags = {};
+    this.talked = new Set(); this.talkedLog = new Map(); this._recapShown = false;
     UI.updateNotebook();
     UI.hideBond();
     State.set('bond', 0); State.set('bondType', 'intimacy');
@@ -36,6 +37,8 @@ const Flow = {
     Player.snapCamera();
     await UI.fadeIn();
     await UI.dialogue(DATA.dlg.wakeup);
+    Player.enabled = false;                    // 튜토리얼 동안 키보드 이동 방지 (대사 종료 시 자동 활성화되므로 재차 잠금)
+    await UI.tutorial();                       // 🎮 조작 안내 (첫 플레이 사용성)
     UI.quest('집 밖으로 나가 보세요! (빛나는 기둥으로 이동)');
     Player.enabled = true;
   },
@@ -54,6 +57,15 @@ const Flow = {
         break;
       case 'class_to_hall':
         if (this.step === 'toPlayground' || this.step === 'toPlayground2') {
+          // 🗣️ 3명 대화 게이트 — 친구들의 마음을 듣고 가야 운동장으로
+          if (this.talked.size < 3) {
+            await this.sysMsg(`잠깐! 반 친구들의 이야기를 좀 더 들어볼까요? 지금까지 ${this.talked.size}명과 이야기했어요. (F키로 3명 이상)`);
+            return;
+          }
+          if (!this._recapShown) {         // 통과 순간 1회: 오늘 들은 마음 요약 → 활동지 기록 시간
+            this._recapShown = true;
+            await this.showTalkRecap();
+          }
           if (await this.remindItem()) return;
           return this.step === 'toPlayground' ? this.enterPlayground1() : this.enterPlayground2();
         }
@@ -85,6 +97,7 @@ const Flow = {
   /* ═══════ 2-1 월드맵 튜토리얼 (마리오 감성 별 모으기) ═══════ */
   async goWorldmap1() {
     this.step = 'tutorial';
+    Sound.playBGM('media/bgm2_toward_the_school.mp3');   // 🎵 등굣길 BGM (학교 교실 진입 시 페이드아웃)
     await World.go('worldmap', { x: -17, z: 19, ry: Math.PI });
     World.setBeacon(1.5, -4.5);
     await UI.dialogue(DATA.dlg.worldmapTutorial);
@@ -105,6 +118,61 @@ const Flow = {
       if (n >= 3) this.spawnDonghyukQuest1();
       else UI.quest(`점프(Space/⬆)로 <로봇 3원칙> 카드를 모아 보세요! (${n}/3)`);
     }
+  },
+
+  /* ═══════ 💬 친구·선생님 자유 대화 (F키) — 단계·씬별 풀 + 셔플백 랜덤 ═══════ */
+  _chatBags: {},
+  talked: new Set(),          // 이 공간에서 대화한 NPC (uid) — 교실 출구 게이트용
+  talkedLog: new Map(),       // uid → { speaker, text } (요약 패널용, NPC당 마지막 대사)
+  _recapShown: false,
+
+  addFriendZone(id, label, x, z) {
+    const uid = id + '@' + x + ',' + z;          // 익명 학생도 개인별로 세도록 위치 기반 uid
+    World.addZone(x, z, 1.6, label, () => Flow.friendTalk(id, uid));
+  },
+  async friendTalk(id, uid) {
+    const src = DATA.friendChat[id === 'student' ? 'students' : id];
+    if (!src) return;
+    const set = src[this.phase === 1 ? 'p1' : 'p2'];
+    if (!set) return;
+    // students는 씬 공용 배열, 나머지는 씬별 풀 (없으면 교실 풀로 폴백)
+    const pool = Array.isArray(set) ? set : (set[World.current] || set.classroom || []);
+    if (!pool.length) return;
+    const key = id + '|' + this.phase + '|' + (Array.isArray(set) ? 'all' : World.current);
+    let bag = this._chatBags[key];
+    if (!bag || !bag.length) {
+      bag = this._chatBags[key] = Array.from(pool, (_, i) => i).sort(() => Math.random() - 0.5);
+    }
+    const speaker = { donghyuk: '동혁', chaewon: '채원', seoyeon: '서연', teacher: '선생님', student: '친구' }[id] || '친구';
+    const text = pool[bag.pop()];
+    await UI.dialogue([{ speaker, text }]);
+    // 🗣️ 대화 기록 (게이트·요약용)
+    this.talked.add(uid || id);
+    this.talkedLog.set(uid || id, { speaker, text });
+    this._updateTalkQuest();
+  },
+
+  /* 교실 자유 이동 중 퀘스트 배너에 (n/3) 진행 표시 */
+  _updateTalkQuest() {
+    if (this.step !== 'toPlayground' && this.step !== 'toPlayground2') return;
+    const n = Math.min(this.talked.size, 3);
+    UI.quest(`친구들의 마음을 들어 보세요 (${n}/3) — 다 들으면 운동장으로!`);
+  },
+
+  /* 💬 "오늘 들은 마음" 요약 — 게이트 통과 순간 1회, 활동지에 옮겨 적는 시간 */
+  showTalkRecap() {
+    const rows = [...this.talkedLog.values()];
+    return new Promise(res => {
+      const ov = UI.overlay(`
+        <div class="ov-panel recap-panel">
+          <h3 class="mini-title">💬 오늘 들은 친구들의 마음</h3>
+          <div class="recap-list">${rows.map(r =>
+            `<div class="recap-row"><span class="recap-who">${DATA.portraits[r.speaker] || '💬'} ${r.speaker}</span><p>${r.text}</p></div>`).join('')}</div>
+          <p class="recap-note">✍️ 가장 인상 깊은 친구의 말을 <b>활동지</b>에 적어 보세요!</p>
+          <div class="ov-choices"><button class="choice-btn ok">다 적었어요!</button></div>
+        </div>`);
+      ov.querySelector('.ok').onclick = () => { Sound.pop(); UI.close(ov); res(); };
+    });
   },
 
   /* ═══════ 💬 노아 잡담 시스템 — 기억해주는 로봇 ═══════ */
@@ -173,9 +241,9 @@ const Flow = {
     this.step = 'meetDonghyuk';
     Sound.win();
     const d = Chars.donghyuk();
-    World.addNPC(d, 6, -6, -Math.PI / 4);
-    World.setBeacon(6, -6);
-    World.addZone(6, -6, 2.2, '동혁이와 대화하기', async () => {
+    World.addNPC(d, 12, -12, -Math.PI / 4);
+    World.setBeacon(12, -12);
+    World.addZone(12, -12, 2.2, '동혁이와 대화하기', async () => {
       await UI.dialogue(DATA.dlg.donghyukQuest1);
       World.removeNPC(d);
       this.step = 'toSchool';
@@ -183,19 +251,30 @@ const Flow = {
       World.setBeacon(17, -13.6);
     });
     UI.quest('저기 있는 동혁이에게 말을 걸어 보세요! (가까이 가서 F)');
-    await this.sysMsg('(저 앞에서 동혁이가 나를 향해 손을 흔들고 있다!)');
+    await this.sysMsg('(동혁이가 나를 향해 손을 흔들고 있다!)');
   },
 
   /* ═══════ 교실 NPC 배치 도우미 ═══════ */
   setupClassroomNPCs(withNoah) {
+    // 🗣️ 공간별 대화 기록 리셋 (교실 출구 3명 게이트)
+    this.talked = new Set(); this.talkedLog = new Map(); this._recapShown = false;
     World.addNPC(Chars.teacher(), -3.5, -3.7, 0);
-    const seats = [[-4.5, -1.1], [-1.5, -1.1], [4.5, -1.1], [-4.5, 1.5], [4.5, 1.5], [-1.5, 4.1]];
-    seats.forEach((s, i) => World.addNPC(Chars.student(i), s[0], s[1], Math.PI));
+    this.addFriendZone('teacher', '선생님과 이야기하기', -3.5, -3.7);
+    // (4.5,1.5) 자리는 노아 잡담 존과 겹쳐 (-4.5,4.1)로 이동
+    const seats = [[-4.5, -1.1], [-1.5, -1.1], [4.5, -1.1], [-4.5, 1.5], [-4.5, 4.1], [-1.5, 4.1]];
+    seats.forEach((s, i) => {
+      World.addNPC(Chars.student(i), s[0], s[1], Math.PI);
+      this.addFriendZone('student', '친구와 이야기하기', s[0], s[1]);
+    });
     World.addNPC(Chars.donghyuk(), 1.5, 1.5, Math.PI);
+    this.addFriendZone('donghyuk', '동혁이와 이야기하기', 1.5, 1.5);
     World.addNPC(Chars.chaewon(), 1.5, 4.1, Math.PI);
+    this.addFriendZone('chaewon', '채원이와 이야기하기', 1.5, 4.1);
+    World.addNPC(Chars.seoyeon(), -1.5, 1.5, Math.PI);        // 서연 — 첫 교실부터 등장
+    this.addFriendZone('seoyeon', '서연이와 이야기하기', -1.5, 1.5);
     if (withNoah) {
       this.noah = Chars.noah(State.get('noahDesign'));
-      World.addNPC(this.noah, 4.5, 0.6, Math.PI);
+      World.addNPC(this.noah, 6.0,0.6, Math.PI);
     }
   },
 
@@ -241,6 +320,7 @@ if (noah.group.children.length > 0) {
   /* ═══════ 3-1 거울1 : 노아와의 첫 만남 ═══════ */
   async enterClassroom1() {
     this.step = 'ep_mirror1';
+    Sound.fadeOutBGM();                        // 🎵 등굣길 BGM 페이드아웃 (학교 도착)
     UI.clearQuest();
     await World.go('classroom', { x: 3.0, z: 4.8, ry: Math.PI });
     this.setupClassroomNPCs(false);
@@ -259,24 +339,30 @@ if (noah.group.children.length > 0) {
     await Assets.preloadWithBar([noahKey], '노아를 조립할 준비 중...');
     await this.assembleNoah(0, -3.5);
     UI.setBond('intimacy', 15);              // 💕 노아와의 첫 만남!
-    this.noahMoment('greet');                // 🎥 꾸벅 인사 + 카메라 클로즈업
-    await UI.dialogue(DATA.dlg.mirror1_noahArrive);
-    this.noahRest();
+    this.noahMoment('greet');           // 🎥 꾸벅 인사 + 카메라 클로즈업
 
+    // 혹시 모를 에러를 방지하기 위해 noah 객체와 play 함수가 있는지 안전하게 체크
+    
+
+    await UI.dialogue(DATA.dlg.mirror1_noahArrive);
+  
     // 나에게 친구란 ___ (def / reason 저장)
-    const def = await UI.textInput('나에게 친구란 _______ (이)다.', '예) 보물, 그늘 같은 사람...', '빈칸에 들어갈 나만의 말을 적어 보세요.');
+    const def = await UI.textInput('나에게 <친구>란 _______ (이)다.', '예) 보물, 그늘 같은 사람...', '빈칸에 들어갈 나만의 말을 적어 보세요.');
     State.set('friendDef', def);
     const reason = await UI.textInput('그렇게 생각하는 이유는?', '이유를 자유롭게 적어 보세요', '', true);
     State.set('friendReason', reason);
 
     await UI.dialogue(DATA.dlg.mirror1_greet);
-
+    if (this.noah && this.noah.play) {
+    this.noah.play('idle', 0.25); // 네 코드에 있는 0.25 트랜지션을 써서 부드럽게 전환!
+}
+    
     // 수미상관 질문 ① (3단계)
-    const ox = await UI.oxQuestion('당신은 인공지능 로봇과 친구가 될 수 있다고 생각하나요?', 'O 또는 X를 선택해 주세요. 정답은 없어요!');
+    const ox = await UI.oxQuestion('당신은 인공지능 로봇과 <친구>가 될 수 있다고 생각하나요?', 'O 또는 X를 선택해 주세요. 정답은 없어요!');
     State.set('ox1', ox);
     const oxReason = await UI.textInput('그렇게 생각한 이유는?', '이유를 자유롭게 적어 보세요', '', true);
     State.set('ox1Reason', oxReason);
-
+    
     // 얼굴 스캔 (Mediapipe 스타일) — 카메라 없는 PC 대응 선택지
     await UI.dialogue(DATA.dlg.mirror1_scanAsk);
     const cam = await UI.choice('노아가 나의 얼굴을 스캔하려 합니다!', [
@@ -285,20 +371,23 @@ if (noah.group.children.length > 0) {
     ]);
     await Mini.faceScan(cam);
     await UI.dialogue(DATA.dlg.mirror1_scanAfter);
+
+    // ✊✌️🖐 얼굴 스캔 직후 — 노아에게 가위바위보 놀이 신청 (절대 이길 수 없는 대결, MediaPipe/버튼 폴백)
+    await UI.dialogue(DATA.dlg.rps1_intro);
+    const fair = await Mini.rpsBattle('tool');
+    await UI.dialogue(fair === 'unfair' ? DATA.dlg.rps1_unfair : DATA.dlg.rps1_amazed);
     UI.setBond('intimacy', 30);              // 💕 거울1 완료
 
     await this.mirror2();
   },
 
-  /* ═══════ 3-2 거울2 : 수학 대결 & 숙제 떠넘기기 ═══════ */
+  /* ═══════ 3-2 거울2 : 맞춤법 대결 & 숙제 떠넘기기 & 데이터 편향 사건 ═══════ */
   async mirror2() {
     await UI.dialogue(DATA.dlg.mirror2_intro);
-    // ✊✌️🖐 몸풀기 가위바위보 — 절대 이길 수 없는 대결 (MediaPipe/버튼 폴백)
-    await UI.dialogue(DATA.dlg.rps1_intro);
-    const fair = await Mini.rpsBattle('tool');
-    await UI.dialogue(fair === 'unfair' ? DATA.dlg.rps1_unfair : DATA.dlg.rps1_amazed);
     await Mini.mathBattle();
     await UI.dialogue(DATA.dlg.mirror2_after);
+    // 📚 데이터 편향 씬 — 동혁의 거짓 학습(한글=이순신) → 오답 발표 → 폭소 (AI는 가르친 대로 배운다)
+    await UI.dialogue(DATA.dlg.bias1);
     UI.setBond('intimacy', 50);              // 💕 거울2 완료
     await this.mirror3();
   },
@@ -310,8 +399,9 @@ if (noah.group.children.length > 0) {
     await UI.dialogue(DATA.dlg.mirror3_after);
     UI.setBond('intimacy', 70);              // 💕 거울3 완료
     await UI.dialogue(DATA.dlg.chaewonQuest);
+    this.noahRest();
     this.step = 'toPlayground';
-    UI.quest('지금은 체육시간입니다. 운동장으로 이동하세요!');
+    UI.quest('친구들의 마음을 들어 보세요 (0/3) — 다 들으면 운동장으로!');
     const z = World.zones.find(z => z.label === '복도로 나가기');
     if (z) z.label = '운동장으로 가기';
     World.setBeacon(6, 5.2);
@@ -325,16 +415,32 @@ if (noah.group.children.length > 0) {
   async enterPlayground1() {
     this.step = 'ep_mirror4';
     UI.clearQuest();
-    await World.go('playground', { x: 0, z: -16, ry: 0 });
+    await World.go('playground', { x: 0, z: -2, ry: 0 });
     World.addNPC(Chars.teacher(), -4, -8, 0.5);
+    this.addFriendZone('teacher', '선생님과 이야기하기', -4, -8);
     World.addNPC(Chars.donghyuk(), 4, 4, -0.8);
+    this.addFriendZone('donghyuk', '동혁이와 이야기하기', 4, 4);
     World.addNPC(Chars.chaewon(), -4, 4, 0.8);
-    for (let i = 0; i < 4; i++) World.addNPC(Chars.student(i), -8 + i * 5, 9, Math.PI * 0.05 * i);
+    this.addFriendZone('chaewon', '채원이와 이야기하기', -4, 4);
+    World.addNPC(Chars.seoyeon(), 8, -3, -0.5);
+    this.addFriendZone('seoyeon', '서연이와 이야기하기', 8, -3);
+    for (let i = 0; i < 4; i++) {
+      World.addNPC(Chars.student(i), -8 + i * 5, 9, Math.PI * 0.05 * i);
+      this.addFriendZone('student', '친구와 이야기하기', -8 + i * 5, 9);
+    }
     this.noah = Chars.noah(State.get('noahDesign'));
-    World.addNPC(this.noah, 0, 1, Math.PI);
+    World.addNPC(this.noah, 0, 1, 0);   // 운동장 한가운데 노아
     Player.enabled = false;
 
     await UI.dialogue(DATA.dlg.mirror4_intro);
+
+    // 🦿 노아 모방 사건 (B안) — 행동 데이터 오염: 채원의 장난 발길질을 노아가 그대로 학습·재현
+    await UI.dialogue(DATA.dlg.imitate1a);
+    this.noahMoment('idle', { dist: 2.8, height: 1.4, lookH: 1.15 });   // 🎥 갸우뚱하는 노아 클로즈업
+    await UI.dialogue(DATA.dlg.imitate1b);
+    this.noahMoment('scared');                                          // 🎥 술렁이는 아이들 앞, 움츠러드는 노아
+    await UI.dialogue(DATA.dlg.imitate1c);
+    this.noahRest();
     UI.setBond('intimacy', 85);              // 💕 거울4 완료
 
     this.step = 'toHallway';
@@ -435,19 +541,22 @@ if (noah.group.children.length > 0) {
     await UI.dialogue(DATA.dlg.respect1_decline);
     await Mini.dataSort();
     await UI.dialogue(DATA.dlg.respect1_after);
+
+    // 🎴 얼굴 스캔(거절) 직후 — 봉인 가위바위보 (공정한 재대결, 3-1 필승판과 수미상관)
+    await UI.dialogue(DATA.dlg.rps2_intro);
+    await Mini.rpsBattle('respect');
+    await UI.dialogue(DATA.dlg.rps2_after);
     UI.setBond('respect', 20);               // 💙 거울1(존중) 완료
     await this.respect2();
   },
 
-  /* ═══════ 5-2 거울2(존중) : 팁만 받고 스스로 풀기 ═══════ */
+  /* ═══════ 5-2 거울2(존중) : 힌트만 받고 내 일기 스스로 완성 & 데이터 교정 ═══════ */
   async respect2() {
-    // 🎴 봉인 가위바위보 — 공정한 재대결 (수업 시작 전, 3-2와 수미상관)
-    await UI.dialogue(DATA.dlg.rps2_intro);
-    await Mini.rpsBattle('respect');
-    await UI.dialogue(DATA.dlg.rps2_after);
     await UI.dialogue(DATA.dlg.respect2_intro);
     await Mini.mathSelf();
     await UI.dialogue(DATA.dlg.respect2_after);
+    // 📚 데이터 교정 씬 — 같은 장난을 이번엔 내가 막고, 동혁이 사과·재학습 (편향은 고칠 수 있다)
+    await UI.dialogue(DATA.dlg.bias2);
     UI.setBond('respect', 40);               // 💙 거울2(존중) 완료
     await this.respect3();
   },
@@ -460,12 +569,12 @@ if (noah.group.children.length > 0) {
     UI.setBond('respect', 60);               // 💙 거울3(존중) 완료
     await UI.dialogue(DATA.dlg.chaewonQuest2);
     this.step = 'toPlayground2';
-    UI.quest('지금은 체육시간입니다. 운동장으로 이동하세요!');
+    UI.quest('친구들의 마음을 들어 보세요 (0/3) — 다 들으면 운동장으로!');
     const z = World.zones.find(z => z.label === '복도로 나가기');
     if (z) z.label = '운동장으로 가기';
     World.setBeacon(6, 5.2);
     World.addItem(-5.5, 1.5, 4.8, 'user1');
-    this.addNoahChatZone(4.5, 0.6);          // 💬 자리에 앉은 노아에게 말 걸기
+    this.addNoahChatZone(6, 0.6);          // 💬 자리에 앉은 노아에게 말 걸기
     await this.sysMsg('(교실 뒤쪽에 새로운 원칙 카드가 반짝이고 있다! 📔)');
     Player.enabled = true;
   },
@@ -474,13 +583,19 @@ if (noah.group.children.length > 0) {
   async enterPlayground2() {
     this.step = 'ep_respect4';
     UI.clearQuest();
-    await World.go('playground', { x: 0, z: -16, ry: 0 });
+    await World.go('playground', { x: 0, z: -2, ry: 0 });
     World.addNPC(Chars.teacher(), -4, -8, 0.5);
+    this.addFriendZone('teacher', '선생님과 이야기하기', -4, -8);
     World.addNPC(Chars.donghyuk(), 4, 4, -0.8);
+    this.addFriendZone('donghyuk', '동혁이와 이야기하기', 4, 4);
     World.addNPC(Chars.chaewon(), -4, 4, 0.8);
-    for (let i = 0; i < 4; i++) World.addNPC(Chars.student(i), -8 + i * 5, 9, Math.PI * 0.05 * i);
+    this.addFriendZone('chaewon', '채원이와 이야기하기', -4, 4);
+    for (let i = 0; i < 4; i++) {
+      World.addNPC(Chars.student(i), -8 + i * 5, 9, Math.PI * 0.05 * i);
+      this.addFriendZone('student', '친구와 이야기하기', -8 + i * 5, 9);
+    }
     this.noah = Chars.noah(State.get('noahDesign'));
-    World.addNPC(this.noah, 0, 1, Math.PI);
+    World.addNPC(this.noah, 0, 1, 0);   // 운동장 한가운데 노아
     Player.enabled = false;
 
     await UI.dialogue(DATA.dlg.respect4_intro);
@@ -490,9 +605,16 @@ if (noah.group.children.length > 0) {
 
     // ⑤ 서연의 인격화 서브 에피소드 — 반대편 벼랑도 경계하기 (관계 저울 게임)
     World.addNPC(Chars.seoyeon(), 1.8, 2.8, -0.9);
+    this.addFriendZone('seoyeon', '서연이와 이야기하기', 1.8, 2.8);
     await UI.dialogue(DATA.dlg.seoyeonIntro);
     await Mini.balanceScale();
     await UI.dialogue(DATA.dlg.seoyeonAfter);
+
+    // 🙌 모방 사건 수미상관 — 채원의 하이파이브를 배우는 노아 (좋은 행동도 그대로 배운다)
+    await UI.dialogue(DATA.dlg.imitate2a);
+    this.noahMoment('greet', { dist: 2.8, height: 1.4, lookH: 1.15 });  // 🎥 하이파이브 — 인사 클립
+    await UI.dialogue(DATA.dlg.imitate2b);
+    this.noahRest();
 
     this.step = 'toHallway2';
     UI.quest('지금은 쉬는시간입니다. 복도로 이동하세요!');
@@ -517,6 +639,15 @@ if (noah.group.children.length > 0) {
     this.addLogDevice();                             // 💾 기록 장치에 새 파일이 도착해 있다
     World.addZone(-12, 2.2, 2.0, '기록 장치 살펴보기 (새 파일!)', () => Flow.readLogs5());
     World.addItem(-8, 1.5, 0, 'user3');              // 노아에게 가는 길목에 배치
+    // 💬 복도의 친구들 — 5단계 깨달음 대사 (스토리 존이 먼저 등록되어 겹칠 때 우선권 가짐)
+    World.addNPC(Chars.donghyuk(), -6, -1.8, 2.0);
+    this.addFriendZone('donghyuk', '동혁이와 이야기하기', -6, -1.8);
+    World.addNPC(Chars.chaewon(), -9, 1.8, -2.4);
+    this.addFriendZone('chaewon', '채원이와 이야기하기', -9, 1.8);
+    World.addNPC(Chars.seoyeon(), -4, 1.8, -2.7);
+    this.addFriendZone('seoyeon', '서연이와 이야기하기', -4, 1.8);
+    World.addNPC(Chars.teacher(), -11.5, -1.8, 1.4);
+    this.addFriendZone('teacher', '선생님과 이야기하기', -11.5, -1.8);
     UI.quest('복도에 노아가 혼자 서 있어요. (기록 장치의 새 파일과 📔카드도 잊지 마세요!)');
     Player.enabled = true;
   },
@@ -533,14 +664,14 @@ if (noah.group.children.length > 0) {
 
     // 노아의 자기 고백 — "저는 사람이 아니에요. 그런데도..." (탈의인화 + 도덕적 대우의 근거)
     // 🎥 카메라를 노아에게 밀어넣어 크게 잡고, 인정 클립(자동차형은 무시)으로 진심을 전한다
-    this.noahMoment('admit', { dist: 2.7, height: 1.4, lookH: 1.15 });
+    this.noahMoment('idle', { dist: 2.7, height: 1.4, lookH: 1.15 });
     await UI.dialogue(DATA.dlg.noahConfession);
     this.noahRest();
 
-    // ═══ 🎈 노아의 기억 풍선 — 9원칙 제목↔뜻 짝맞추기 (MediaPipe Phase 2) ═══
-    await UI.dialogue(DATA.dlg.balloonIntro);
-    await Mini.balloonGame();
-    await UI.dialogue(DATA.dlg.balloonDone);
+    // ═══ 🪜 약속의 계단 — 9원칙 제목↔뜻 복습 등반 (기억 풍선 개편판) ═══
+    await UI.dialogue(DATA.dlg.stairsIntro);
+    await Mini.stairsGame();
+    await UI.dialogue(DATA.dlg.stairsDone);
 
     // ═══ 도덕에 기반을 둔 공존·상생의 관계로! 약속 3가지 + 서명 ═══
     await this.sysMsg('여러분은 노아와 <도덕에 기반을 둔 공존·상생의 관계>를 만들어가고 있어요! 이제 마지막 마무리를 해볼까요?');

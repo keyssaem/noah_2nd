@@ -2,6 +2,7 @@
 (function () {
   const canvas = document.getElementById('game-canvas');
   UI.init();
+  Settings.init();                 // ⚙️ 저장된 설정 적용 (효과음/BGM/글자크기)
   World.init(canvas);
   Player.init();
   Player.initItemClick(canvas);

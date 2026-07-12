@@ -118,7 +118,7 @@ kbd { background:#fff; border:2px solid #cbd5e1; border-bottom-width:4px; border
 .spec-zones { display:flex; gap:5px; text-align:center; color:#fff;
   font-size:clamp(13px,2.1vw,17px); margin-bottom:8px; }
 .spec-zone { flex:1; border-radius:12px; padding:9px 4px; word-break:keep-all; }
-.spec-zone small { display:block; font-size:clamp(9px,1.5vw,12px); opacity:.85; line-height:1.35; margin-top:4px; }
+.spec-zone small { display:block; font-size:clamp(12px,1.5vw,15px); opacity:.85; line-height:1.35; margin-top:4px; }
 .spec-zone.bad  { background:rgba(201,42,42,.32); border:2px solid #e03131; }
 .spec-zone.good { background:rgba(43,138,62,.32); border:2px solid #40c057; }
 .spec-zone.bad2 { background:rgba(232,89,12,.32); border:2px solid #f76707; }
@@ -188,7 +188,7 @@ body.touch #key-guide { display:none; }
 .ov-input { font-family:inherit; font-size:clamp(16px,2.4vw,21px); padding:12px 16px; border:3px solid #91a7ff;
   border-radius:14px; width:100%; margin-top:14px; outline:none; text-align:center; }
 textarea.ov-input { min-height:90px; resize:none; text-align:left; }
-.ov-sub { color:#868e96 !important; font-size:clamp(12px,1.8vw,15px) !important; margin-top:8px; }
+.ov-sub { color:#868e96 !important; font-size:clamp(15px,1.8vw,18px) !important; margin-top:8px; }
 
 /* O/X 버튼 */
 .ox-row { display:flex; gap:24px; justify-content:center; margin:18px 0 6px; }
@@ -242,7 +242,7 @@ textarea.ov-input { min-height:90px; resize:none; text-align:left; }
 @keyframes glitchShake { 0%{transform:translate(0,0);} 25%{transform:translate(-8px,4px) skewX(2deg);}
   50%{transform:translate(6px,-6px);} 75%{transform:translate(-4px,-3px) skewX(-3deg);} 100%{transform:translate(5px,5px);} }
 .sys-error { background:#000; flex-direction:column; gap:18px; }
-.sys-error .err-title { color:#ff4444; font-size:clamp(34px,7vw,64px); animation:errBlink .4s steps(1) infinite;
+.sys-error .err-title { color:#ff4444; font-size:clamp(68px,14vw,128px); animation:errBlink .4s steps(1) infinite;
   font-weight:bold; letter-spacing:4px; text-shadow:0 0 30px #f00; }
 @keyframes errBlink { 50%{opacity:.15;} }
 .sys-error .err-sub { color:#ff8888; font-size:clamp(15px,2.6vw,22px); font-family:monospace; }
@@ -256,11 +256,71 @@ textarea.ov-input { min-height:90px; resize:none; text-align:left; }
 .stat-fill.red { background:linear-gradient(90deg,#c92a2a,#ff6b6b); }
 .stat-fill.blue { background:linear-gradient(90deg,#4dabf7,#74c0fc); }
 
+/* ═══════════════ ⚙️ 설정 패널 ═══════════════ */
+.settings-panel { max-width:min(460px,94vw); text-align:left; }
+.set-row { display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:12px 4px; border-bottom:2px solid #f1f3f5; }
+.set-label { color:#343a40; font-size:clamp(15px,2.4vw,19px); font-weight:700; }
+.set-note { display:block; color:#868e96; font-size:clamp(11px,1.6vw,13px); font-weight:400; margin-top:2px; }
+.set-toggle { min-width:66px; padding:8px 14px; border-radius:999px; border:3px solid #ced4da;
+  background:#f1f3f5; color:#868e96; font-family:inherit; font-size:16px; font-weight:700; cursor:pointer;
+  transition:all .15s; flex-shrink:0; }
+.set-toggle.on { border-color:#40c057; background:#d3f9d8; color:#2b8a3e; }
+.set-toggle:disabled { opacity:.5; cursor:not-allowed; }
+.set-seg { display:flex; gap:6px; flex-shrink:0; }
+.set-seg button { padding:8px 11px; border-radius:12px; border:3px solid #ced4da; background:#f1f3f5;
+  color:#495057; font-family:inherit; font-size:clamp(12px,1.8vw,15px); cursor:pointer; transition:all .15s; }
+.set-seg button.on { border-color:#4c6ef5; background:#edf2ff; color:#3b5bdb; }
+
+/* 🔠 글자 크기 설정 — 읽기 표면만 확대 (clamp px+vw라 :root font-size로는 안 되어 클래스 오버라이드) */
+body.fs-large  #dlg-text { font-size:clamp(20px,3.2vw,28px) !important; }
+body.fs-large  #dlg-speaker { font-size:clamp(17px,2.6vw,22px) !important; }
+body.fs-large  .ov-panel p, body.fs-large .ov-sub { font-size:clamp(18px,2.9vw,24px) !important; }
+body.fs-large  .choice-btn { font-size:clamp(19px,3vw,25px) !important; }
+body.fs-large  #quest-text { font-size:clamp(16px,2.5vw,22px) !important; }
+body.fs-xlarge #dlg-text { font-size:clamp(24px,4vw,34px) !important; }
+body.fs-xlarge #dlg-speaker { font-size:clamp(19px,3vw,26px) !important; }
+body.fs-xlarge .ov-panel p, body.fs-xlarge .ov-sub { font-size:clamp(21px,3.5vw,29px) !important; }
+body.fs-xlarge .choice-btn { font-size:clamp(22px,3.7vw,31px) !important; }
+body.fs-xlarge #quest-text { font-size:clamp(18px,2.9vw,25px) !important; }
+
+/* ═══════════════ 🎮 조작 안내 튜토리얼 ═══════════════ */
+.tuto-panel { max-width:min(520px,94vw); }
+.tuto-grid { display:flex; flex-direction:column; gap:10px; margin:14px 0 4px; text-align:left; }
+.tuto-item { display:flex; align-items:center; gap:14px; background:#f8f9fa; border:2px solid #e9ecef;
+  border-radius:16px; padding:10px 14px; }
+.tuto-ico { font-size:clamp(28px,5vw,38px); line-height:1; flex-shrink:0; width:1.5em; text-align:center; }
+.tuto-txt { display:flex; flex-direction:column; }
+.tuto-txt b { color:#343a40; font-size:clamp(15px,2.4vw,19px); }
+.tuto-txt span { color:#1971c2; font-size:clamp(13px,2vw,17px); margin-top:2px; }
+.tuto-txt span b { color:#e8590c; }
+
 /* ═══════════════ 미니게임 공용 ═══════════════ */
 .mini-title { background:linear-gradient(90deg,#4c6ef5,#845ef7); color:#fff !important; border-radius:14px;
   padding:10px 18px; font-size:clamp(17px,2.6vw,24px) !important; margin-bottom:14px !important; }
+
+/* 💙 노아에게 따뜻한 말 건네기 — mids(왼쪽) · ends(오른쪽) 2열 카드 */
+.cmp-start { margin-bottom:8px; }
+.cmp-cols { display:flex; gap:14px; align-items:stretch; margin-top:4px; }
+.cmp-col { flex:1; display:flex; flex-direction:column; gap:8px; }
+.cmp-head { font-size:clamp(13px,1.9vw,16px); color:#495057; font-weight:700; margin-bottom:2px; }
+.cmp-btn { width:100%; margin:0; }
+.cmp-btn.amber { background:#fff9db; border-color:#fab005; color:#e67700; }
+@media (max-width:560px){ .cmp-cols { flex-direction:column; gap:10px; } }
 .draw-canvas { border:4px solid #91a7ff; border-radius:16px; background:#fff; cursor:crosshair;
   touch-action:none; max-width:100%; }
+/* 🎨 미술 제한 시간 타이머 + 노아 그림 커버(💌) */
+.art-timerbar { display:flex; align-items:center; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:12px; }
+.art-timer { background:#212529; color:#4dffa0; font-family:monospace; font-weight:700;
+  font-size:clamp(18px,3vw,26px); border-radius:12px; padding:6px 16px; min-width:92px; text-align:center; }
+.art-timer.warn { color:#ff6b6b; animation:errBlink .5s steps(1) infinite; }
+.art-hint { color:#495057; font-size:clamp(13px,2vw,16px); word-break:keep-all; }
+.art-hint b { color:#e8590c; }
+.noah-art-box { position:relative; display:inline-block; line-height:0; }
+.noah-cover { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; background:rgba(76,110,245,.94); color:#fff; border-radius:16px; cursor:default;
+  font-size:clamp(40px,8vw,60px); }
+.noah-cover span { font-size:clamp(13px,2vw,16px); line-height:1.45; text-align:center; }
 .color-row { display:flex; gap:8px; justify-content:center; margin:10px 0; flex-wrap:wrap; }
 .color-dot { width:34px; height:34px; border-radius:50%; border:3px solid #dee2e6; cursor:pointer; }
 .color-dot.on { border-color:#212529; transform:scale(1.15); }
@@ -297,6 +357,7 @@ textarea.ov-input { min-height:90px; resize:none; text-align:left; }
 .friend-chip { display:inline-flex; flex-direction:column; align-items:center; background:#e7f5ff; border:3px solid #74c0fc;
   border-radius:14px; padding:8px 12px; margin:5px; cursor:pointer; font-size:clamp(13px,2vw,17px); transition:all .15s; }
 .friend-chip:hover { transform:translateY(-3px); }
+.friend-chip.sel { border-color:#4c6ef5; background:#edf2ff; box-shadow:0 0 0 3px rgba(76,110,245,.35); }
 .friend-chip .fstat { font-size:11px; color:#868e96; }
 .team-cols { display:flex; gap:12px; margin-top:12px; }
 .team-col { flex:1; border-radius:16px; padding:10px; min-height:130px; }
@@ -309,7 +370,12 @@ textarea.ov-input { min-height:90px; resize:none; text-align:left; }
   background:#f8f9fa; border:3px solid #dee2e6; border-radius:14px; padding:12px 16px; margin:7px 0;
   cursor:pointer; transition:all .15s; color:#343a40; word-break:keep-all; }
 .promise-card.on { background:#fff9db; border-color:#fab005; box-shadow:0 4px 12px rgba(250,176,5,.35); }
+.promise-card.on .pnum::after { content:' ✓'; }
 .promise-card .pnum { color:#fab005; margin-right:6px; }
+/* 약속 전문 확인창 (읽기 강제) */
+.promise-confirm { max-width:min(560px,94vw); }
+.promise-full { font-size:clamp(19px,3.4vw,27px); color:#343a40; line-height:1.65; word-break:keep-all;
+  background:#fff9db; border:3px solid #ffe066; border-radius:16px; padding:22px 20px; margin:6px 0 4px; }
 
 /* 하트 파티클 */
 .heart-float { position:absolute; font-size:30px; animation:heartUp 1.6s ease-out forwards; pointer-events:none; z-index:90; }
@@ -454,51 +520,90 @@ textarea.ov-input { min-height:90px; resize:none; text-align:left; }
 @keyframes dialShake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-10px);}
   40%{transform:translateX(9px);} 60%{transform:translateX(-6px);} 80%{transform:translateX(4px);} }
 
-/* ═══════════ 🎈 노아의 기억 풍선 (MediaPipe Hand · AR 전체 화면) ═══════════ */
-.blg-ov { background:#06080d; }
-.blg-stage { position:relative; width:min(96vw, calc(92vh * 4 / 3)); aspect-ratio:4/3;
-  border-radius:16px; overflow:hidden; background:#5f6f7d; }
-.blg-stage.nocam { background:linear-gradient(#43596b, #31465a); }
-.blg-cam { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
-.blg-hud { position:absolute; top:10px; left:10px; right:10px; display:flex;
-  justify-content:space-between; align-items:center; z-index:5; pointer-events:none; }
-.blg-chip { background:rgba(10,14,22,.72); color:#fff; border-radius:10px; padding:6px 13px;
-  font-size:clamp(12px,2vw,16px); }
-.blg-stars { color:#ffd43b; }
-.blg-msg { position:absolute; top:52px; left:50%; transform:translateX(-50%); z-index:5;
-  background:rgba(10,14,22,.66); color:#fff; border-radius:10px; padding:5px 14px;
-  font-size:clamp(12px,1.9vw,15px); pointer-events:none; white-space:nowrap;
-  max-width:92%; overflow:hidden; text-overflow:ellipsis; }
-.blg-msg:empty { display:none; }
-.blg-balloon { position:absolute; transform:translate(-50%,-50%); background:rgba(255,255,255,.95);
-  border:3px solid #ffd43b; border-radius:999px; padding:9px 18px;
-  font-size:clamp(12px,2.1vw,16px); color:#5B4636; cursor:pointer; z-index:6;
-  white-space:nowrap; user-select:none; animation:blgBob 2.6s ease-in-out infinite; }
-.blg-balloon.set-robot  { border-color:#ffd43b; }   /* 🤖 로봇 3원칙 = 노랑 */
-.blg-balloon.set-ethics { border-color:#ff922b; }   /* 🧭 AI 윤리 3대 원칙 = 주황 */
-.blg-balloon.set-user   { border-color:#4dabf7; }   /* 📱 사용자 윤리 원칙 = 파랑 */
-@keyframes blgBob { 0%,100%{ margin-top:0; } 50%{ margin-top:-12px; } }
-.blg-balloon.held { animation:none; z-index:9; box-shadow:0 0 20px rgba(250,176,5,.9);
-  transform:translate(-50%,-50%) scale(1.12); }
-.blg-balloon.fly { animation:none; transition:left .38s ease, top .38s ease, opacity .42s, transform .38s;
-  opacity:0; transform:translate(-50%,-50%) scale(.25); pointer-events:none; }
-.blg-balloon.pop { animation:blgPop .4s forwards; pointer-events:none; }
-@keyframes blgPop { 40%{ transform:translate(-50%,-50%) scale(1.28); }
-  100%{ transform:translate(-50%,-50%) scale(0); opacity:0; } }
-.blg-gauge { position:absolute; left:8%; bottom:3px; height:4px; width:0;
-  background:#69db7c; border-radius:2px; pointer-events:none; }
-.blg-q { position:absolute; left:4%; right:4%; bottom:74px; background:rgba(10,14,22,.78);
-  color:#fff; border-radius:12px; padding:10px 16px; text-align:center;
-  font-size:clamp(13px,2.3vw,19px); z-index:5; word-break:keep-all; line-height:1.5; }
-.blg-hl { color:#ffd43b; }
-.blg-slot { position:absolute; left:50%; bottom:12px; transform:translateX(-50%);
-  background:rgba(255,251,240,.93); border:3px dashed #e8590c; border-radius:14px;
-  padding:8px 26px; font-size:clamp(13px,2.2vw,17px); color:#5B4636; z-index:5; white-space:nowrap; }
-.blg-slot.flash { background:#d3f9d8; border-color:#40c057; border-style:solid; }
-.blg-cursor { position:absolute; left:-100px; top:-100px; z-index:10; font-size:clamp(28px,5vw,38px);
-  transform:translate(-50%,-50%); pointer-events:none; display:none;
-  filter:drop-shadow(0 0 7px rgba(250,176,5,.9)); }
-.blg-cursor.on { display:block; }
+/* ═══════════ 🪜 약속의 계단 (9원칙 복습 · CSS 아이소메트릭 등반) ═══════════ */
+.stg-ov { background:#131a33; }
+.stg-stage { position:relative; width:100%; height:100%; display:flex; flex-direction:column;
+  align-items:center; gap:8px; padding:10px 12px;
+  background:
+    radial-gradient(2px 2px at 12% 16%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1.6px 1.6px at 78% 9%, rgba(255,255,255,.55), transparent 60%),
+    radial-gradient(1.6px 1.6px at 55% 24%, rgba(255,255,255,.4), transparent 60%),
+    radial-gradient(2px 2px at 90% 34%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(1.4px 1.4px at 30% 38%, rgba(255,255,255,.35), transparent 60%),
+    linear-gradient(#141b3a, #22305e 55%, #35547e); }
+.stg-hud { width:100%; display:flex; justify-content:space-between; align-items:center; }
+.stg-chip { background:rgba(10,14,22,.72); color:#fff; border-radius:10px; padding:8px 18px;
+  font-size:clamp(13px,1.7vw,26px); }
+.stg-stars { color:#ffd43b; }
+/* 문제 카드 — 화면 맨 위 (계단 전경을 가리지 않는다) */
+.stg-q { max-width:min(1100px,98%); background:rgba(10,14,22,.78); color:#fff; border-radius:16px;
+  padding:16px 28px; text-align:center; font-size:clamp(16px,2.2vw,32px);
+  word-break:keep-all; line-height:1.5; }
+.stg-qnum { display:inline-block; background:#364fc7; border-radius:8px; padding:3px 12px;
+  font-size:.8em; margin-right:10px; vertical-align:2px; white-space:nowrap; }
+.stg-hl { color:#ffd43b; }
+.stg-opts { display:flex; flex-wrap:wrap; gap:14px; justify-content:center; max-width:98%; }
+.stg-opt { font-family:inherit; font-size:clamp(16px,2.1vw,30px); padding:14px 30px;
+  border-radius:999px; border:4px solid #ffd43b; background:rgba(255,255,255,.95);
+  color:#5B4636; cursor:pointer; transition:transform .15s, box-shadow .15s; word-break:keep-all; }
+.stg-opt:hover { transform:translateY(-3px); box-shadow:0 6px 14px rgba(0,0,0,.3); }
+.stg-opt.set-robot  { border-color:#ffd43b; }   /* 🤖 로봇 3원칙 = 노랑 */
+.stg-opt.set-ethics { border-color:#ff922b; }   /* 🧭 AI 윤리 3대 원칙 = 주황 */
+.stg-opt.set-user   { border-color:#4dabf7; }   /* 📱 사용자 윤리 원칙 = 파랑 */
+.stg-opt.good { background:#d3f9d8; border-color:#40c057; }
+.stg-opt.out { animation:stgOut .42s forwards; pointer-events:none; }
+@keyframes stgOut { 30%{ transform:rotate(-6deg) scale(1.06); }
+  100%{ transform:rotate(10deg) scale(0); opacity:0; } }
+.stg-msg { min-height:1.7em; color:#dbe4ff; font-size:clamp(14px,1.8vw,22px); text-align:center;
+  padding:0 10px; word-break:keep-all; }
+.stg-msg b { color:#ffd43b; }
+/* 무대 — 설계 좌표계(780×480)를 scale로 화면에 맞춘다 */
+.stg-scenebox { flex:1; width:100%; min-height:0; display:flex;
+  align-items:center; justify-content:center; }
+.stg-scenebox.quake { animation:stgQuake .5s ease; }
+@keyframes stgQuake { 20%{ transform:translate(-9px,3px); } 45%{ transform:translate(8px,-2px); }
+  70%{ transform:translate(-5px,2px); } 90%{ transform:translate(3px,0); } }
+.stg-scene { position:relative; width:780px; height:480px; flex:none; }
+/* 계단 타일 — 개별 rotateX+rotateZ 아이소메트릭 (perspective/preserve-3d 불필요 → 구형기기 안전) */
+.stg-tile { position:absolute; width:78px; height:78px;
+  transform:translate(-50%,-50%) rotateX(57deg) rotateZ(45deg);
+  background:#5d6c8f; border:3px solid #46536f; border-radius:14px;
+  box-shadow:10px 10px 0 #2c364e;
+  transition:background .35s, border-color .35s, box-shadow .35s; }
+.stg-tile.start { background:#69db7c; border-color:#2f9e44; box-shadow:10px 10px 0 #1d6a33; }
+.stg-tile.top { width:108px; height:108px; background:#748ffc; border-color:#4c6ef5;
+  box-shadow:12px 12px 0 #2c3e8f; }
+.stg-tile.lit { background:#ffe066; border-color:#f59f00;
+  box-shadow:10px 10px 0 #9c7514, 0 0 22px rgba(255,224,102,.5); }
+.stg-icon { position:absolute; z-index:4; transform:translate(-50%,-50%); font-size:24px;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.45)); animation:stgIconIn .55s ease; }
+@keyframes stgIconIn { from{ transform:translate(-50%,-160%) scale(2.2); opacity:0; } }
+.stg-actor { position:absolute; z-index:5; font-size:40px; line-height:1;
+  transform:translate(-50%,-88%); pointer-events:none;
+  transition:left .5s cubic-bezier(.45,1.5,.55,1), top .5s cubic-bezier(.45,1.5,.55,1);
+  filter:drop-shadow(0 4px 5px rgba(0,0,0,.45)); }
+.stg-actor span { display:inline-block; }
+.stg-actor.hop span { animation:stgHop .55s ease; }
+@keyframes stgHop { 40%{ transform:translateY(-30px); } }
+.stg-actor.wob span { animation:stgWob .55s ease; }
+@keyframes stgWob { 25%{ transform:translate(-8px,2px) rotate(-12deg); }
+  60%{ transform:translate(7px,1px) rotate(9deg); } }
+.stg-noahchar { font-size:42px; }
+.stg-flag { position:absolute; z-index:3; font-size:30px; transform:translate(-50%,-70%); }
+.stg-five { position:absolute; z-index:7; font-size:56px; transform:translate(-50%,-50%);
+  animation:stgFive 1s ease; filter:drop-shadow(0 0 14px rgba(255,224,102,.8)); }
+@keyframes stgFive { from{ transform:translate(-50%,-30%) scale(.2); opacity:0; }
+  55%{ transform:translate(-50%,-60%) scale(1.4); } }
+
+/* ═══════════ 💬 오늘 들은 마음 (대화 게이트 요약) ═══════════ */
+.recap-panel { max-width:min(620px,94vw); }
+.recap-list { max-height:46vh; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin:10px 0; }
+.recap-row { background:#f8f9fa; border-left:4px solid #74c0fc; border-radius:0 12px 12px 0;
+  padding:8px 12px; text-align:left; }
+.recap-who { font-size:clamp(12px,1.9vw,14px); color:#1971c2; font-weight:700; }
+.recap-row p { margin:3px 0 0; color:#343a40; font-size:clamp(13px,2vw,16px); line-height:1.5; word-break:keep-all; }
+.recap-note { background:#fff9db; border:2px dashed #fab005; border-radius:12px;
+  padding:8px 14px; color:#7a4f1d; font-size:clamp(13px,2.1vw,16px); }
 
 /* ═══════════ 🎭 GLB 뷰어 (Dev) ═══════════ */
 .glbv-panel { background:#151521; border:2px solid #69f0ae; color:#eee; max-width:min(560px,96vw); }

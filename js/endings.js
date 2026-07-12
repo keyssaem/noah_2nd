@@ -63,7 +63,7 @@ const Endings = {
         <p>이렇게 여러분은 인공지능 로봇 노아와<br><b>높은 친밀도</b>를 형성하였습니다.</p>
         <div class="stat-row"><div class="stat-label" style="color:#495057;"><span>💕 친밀도</span><span>100%</span></div>
           <div class="stat-bar"><div class="stat-fill pink" style="width:0%;"></div></div></div>
-        <p class="fake-msg">이대로 게임을 마칠...</p>
+        <p class="fake-msg">이대로 모험을 마칠...</p>
       </div>`, 'fx3d');
     Sound.win();
     await UI.wait(80);
@@ -107,7 +107,7 @@ const Endings = {
 
     // 혼란스러워하는 노아 클로즈업
     const noahClose = UI.overlay(`
-      <div style="font-size:clamp(90px,22vw,180px); animation:glitchShake .12s steps(2) infinite;">😖🤖</div>
+      <div style="font-size:clamp(90px,22vw,180px); animation:glitchShake .12s steps(2) infinite;">😞💔🤖</div>
       <div class="bigtext-line" style="color:#ff8888;">"안돼.. 안돼..!!!!!!!!!!"</div>`, 'bigtext-ov');
     Sound.error(); this.vibrate([100, 50, 100, 50, 100, 50, 800]);
     await UI.wait(2600);
@@ -122,8 +122,8 @@ const Endings = {
 
     // 수미상관 회고
     await UI.bigText([
-      `당신은 분명...\n친구란 "${State.get('friendDef')}"라고 했으며,`,
-      `그 이유는\n"${State.get('friendReason')}"\n...라고 했습니다.`,
+      `당신은 분명...\n**친구**란 "${State.get('friendDef')}"라고 했으며,`,
+      `**그 이유**는\n"${State.get('friendReason')}"\n...라고 했습니다.`,
       '인공지능 로봇과 친구가 될 수도 있고,\n안 될 수도 있습니다.',
       "하지만 당신은 인공지능 로봇과\n**'도덕적'**으로 관계를 맺지 않았습니다.",
     ], { bg: 'rgba(2,2,8,.98)' });
@@ -133,7 +133,7 @@ const Endings = {
 
     // 재프레이밍 — 감정은 로봇이 아니라 '우리'의 것 (지도서 지도 중점)
     await UI.bigText([
-      '노아는 슬퍼서 멈춘 것이 아닙니다.\n**도덕** 원칙과는 다른 [관계 데이터] 때문에,\n동작을 멈춘 것입니다...'
+      '노아는 슬퍼서 멈춘 것이 아닙니다.\n**도덕 원칙**과는 다른 [관계 데이터] 때문에,\n동작을 멈춘 것입니다...'
       
     ], { bg: 'rgba(2,2,8,.98)' });
 
@@ -212,7 +212,7 @@ const Endings = {
         <div style="text-align:center; max-width:min(560px,94vw);">
           <div style="font-size:70px; filter:grayscale(1) brightness(.5);">🤖</div>
           <h3 style="color:#fff; font-size:clamp(20px,3.4vw,30px); margin:14px 0;">노아가 강제 종료되었습니다.</h3>
-          <p style="color:#adb5bd; margin-bottom:14px;">재시작하려면 금고 다이얼을 돌려<br>비밀 코드 4자리를 맞춰 주세요.</p>
+          <p style="color:#adb5bd; margin-bottom:14px;">재시작하려면 선생님께 비밀 코드 4자리를 여쭤보고, <br> 다이얼을 돌려 맞춰 주세요.</p>
           <div class="safe-dials"></div>
           <div class="ov-choices" style="flex-direction:row; justify-content:center;">
             <button class="choice-btn hint">💡 힌트 보기</button>
@@ -311,7 +311,11 @@ const Endings = {
 
     // 6-2 헌장 다운로드
     await this.charter();
-    // 6-3 쿠키
+    // 6-3 🎬 엔딩 영상 — 내가 고른 노아 디자인으로 분기 (인간형 / 그 외=동물·자동차형)
+    //     로드 실패(파일 미배포·file://)해도 playVideo가 error→통과하므로 안전
+    const endVid = State.get('noahDesign') === 'human' ? 'ending_human_ver.mp4' : 'ending_animal_ver.mp4';
+    await UI.playVideo('media/temporary_files/' + endVid, { skip: true, skipDelay: 5000 });
+    // 6-4 쿠키 마무리 문구
     await UI.bigText(DATA.cookieLines, { bg: 'rgba(2,2,8,.98)' });
 
     // ═══ 💌 히든 엔딩 — 노아의 진짜 편지 (수첩 9/9 + 새 기록 열람) ═══
@@ -336,30 +340,37 @@ const Endings = {
       <div style="text-align:center;">
         <div style="font-size:90px;">🤖💙</div>
         <p style="color:#ffe066; font-size:clamp(16px,2.6vw,22px); margin-bottom:4px;">${ed.stamp} ${ed.title}</p>
-        <h3 style="color:#fff; font-size:clamp(24px,4vw,38px); margin:10px 0 16px;">- THE END -</h3>
-        <p style="color:#adb5bd;">함께해 줘서 고마워요, ${State.get('name')}!</p>
+        <h1 style="color:#fff; font-size:clamp(20px,4vw,35px); margin:10px 0 16px;"> 인공지능 로봇 <노아>와의 시뮬레이션 모험을 통하여,
+      로봇에 대한 <도덕적 태도>의 중요성을 이해하는 시간이 되었길 바라요.</h1>
+        <h1 style="color:#ffe066;">
+                <노아>와 함께해줘서 진심으로 고마워요💌, ${State.get('name')}!</h1>
         <div class="ov-choices"><button class="choice-btn again">🏠 처음 화면으로</button></div>
       </div>`, 'bigtext-ov');
     fin.querySelector('.again').onclick = () => location.reload();
   },
 
   /* ═══════ 6-2 약속 헌장 이미지 생성 & 다운로드 ═══════ */
-  async charter() {
-    const c = document.createElement('canvas');
-    c.width = 1000; c.height = 1580;
-    const x = c.getContext('2d');
+  /* 둥근 사각형 경로 (구형 브라우저 대응 — ctx.roundRect 미의존, 수동 arcTo) */
+  _roundRectPath(x, px, py, w, h, r) {
+    x.beginPath();
+    x.moveTo(px + r, py);
+    x.arcTo(px + w, py, px + w, py + h, r);
+    x.arcTo(px + w, py + h, px, py + h, r);
+    x.arcTo(px, py + h, px, py, r);
+    x.arcTo(px, py, px + w, py, r);
+    x.closePath();
+  },
 
-    // 배경 & 테두리
-    const grad = x.createLinearGradient(0, 0, 0, c.height);
-    grad.addColorStop(0, '#fff9e8'); grad.addColorStop(1, '#ffeeda');
-    x.fillStyle = grad; x.fillRect(0, 0, c.width, c.height);
-    x.strokeStyle = '#e8a33d'; x.lineWidth = 14; x.strokeRect(28, 28, c.width - 56, c.height - 56);
-    x.strokeStyle = '#f3c675'; x.lineWidth = 4; x.strokeRect(52, 52, c.width - 104, c.height - 104);
-
-    const wrap = (text, maxW, font) => {   // 줄바꿈 도우미
+  /* 헌장 본문을 그리는 공통 로직 — ctx만 바꿔 측정(1패스)·실그리기(2패스)에 재사용.
+     반환값: 본문이 끝난 y좌표(=콘텐츠 실제 높이) → 캔버스를 그만큼만 정확히 만들어
+     내용 길이(약속·이유 글자 수 등)에 관계없이 잘리거나 빈 공간이 남지 않게 한다. */
+  _drawCharterBody(x, W, ed, media = {}) {
+    const PAD = 145;              // 좌우 기본 여백 (테두리에서 더 떨어뜨림 — 기존보다 확대)
+    const INDENT = 22;            // 본문 들여쓰기 폭
+    const wrap = (text, maxW, font) => {
       x.font = font;
-      const words = String(text).split(''); const lines = []; let line = '';
-      for (const ch of words) {
+      const chars = String(text).split(''); const lines = []; let line = '';
+      for (const ch of chars) {
         if (x.measureText(line + ch).width > maxW) { lines.push(line); line = ch; }
         else line += ch;
       }
@@ -368,84 +379,159 @@ const Endings = {
     };
     let y = 140;
     x.textAlign = 'center'; x.fillStyle = '#b8860b';
-    x.font = 'bold 30px Jua, sans-serif';
-    x.fillText('🤖 💙 🤝', c.width / 2, y); y += 56;
-    x.fillStyle = '#7c4a03'; x.font = 'bold 44px Jua, sans-serif';
-    x.fillText('인공지능 로봇과의', c.width / 2, y); y += 58;
-    x.fillText('올바른 관계 맺기 약속 헌장', c.width / 2, y); y += 40;
+    x.font = 'bold 40px Jua, sans-serif';
+    x.fillText('🤖 💙 🤝', W / 2, y); y += 56;
+    x.fillStyle = '#7c4a03';
+    wrap('인공지능 로봇과의', W - PAD * 2, 'bold 50px Jua, sans-serif').forEach(l => { x.fillText(l, W / 2, y); y += 58; });
+    wrap('올바른 관계 맺기 약속 헌장', W - PAD * 2, 'bold 50px Jua, sans-serif').forEach(l => { x.fillText(l, W / 2, y); y += 58; });
+    y += -18;
     x.strokeStyle = '#e8a33d'; x.lineWidth = 3;
-    x.beginPath(); x.moveTo(150, y); x.lineTo(850, y); x.stroke(); y += 60;
+    x.beginPath(); x.moveTo(PAD + 20, y); x.lineTo(W - PAD - 20, y); x.stroke(); y += 60;
 
     x.textAlign = 'left';
     const section = (title, body) => {
       x.fillStyle = '#1971c2'; x.font = 'bold 30px Jua, sans-serif';
-      wrap(title, 800, 'bold 30px Jua, sans-serif').forEach(l => { x.fillText(l, 100, y); y += 40; });
+      wrap(title, W - PAD * 2, 'bold 30px Jua, sans-serif').forEach(l => { x.fillText(l, PAD, y); y += 40; });
       x.fillStyle = '#343a40';
       body.forEach(t => {
-        wrap(t, 780, '26px Jua, sans-serif').forEach(l => { x.fillText(l, 120, y); y += 38; });
+        wrap(t, W - PAD * 2 - INDENT, '30px Jua, sans-serif').forEach(l => { x.fillText(l, PAD + INDENT, y); y += 38; });
         y += 6;
       });
       y += 26;
     };
 
-    section('Q1. 나에게 친구란?', [
+    section('Q1. 나에게 <친구>란?', [
       `“${State.get('friendDef')}” 이다.`,
       `그 이유는, ${State.get('friendReason')}`,
     ]);
-    section('Q2. 나는 인공지능 로봇과 친구가 될 수 있다고 생각한다.', [
+    section('Q2. 나는 인공지능 로봇과 <친구>가 될 수 있다고 생각한다.', [
       `나의 대답: [ ${State.get('ox2') || State.get('ox1')} ]`,
       `그 이유는, ${State.get('ox2Reason') || State.get('ox1Reason')}`,
     ]);
-    section('Q3. 노아와 올바른 관계를 맺기 위한 나의 3가지 약속',
-      (State.get('promises') || []).map((p, i) => `${['하나', '둘', '셋'][i]}. ${p}`));
-    section('Q4. 노아와 나의 관계 — 스스로 정하기', [
-      '노아는 사람도, 단순한 도구도 아닙니다.',
-      `나는 노아를 “${State.get('relationDef') || '좋은 이웃'}”(으)로 대하겠습니다.`,
+    section('Q3. 노아와 나의 <관계>는?', [
+      '노아는 단순한 도구도, 사람도 아닙니다.',
+      `나는 노아를 “${State.get('relationDef') || '좋은 동료'}”(으)로 대하겠습니다.`,
     ]);
+    section('Q4. 노아와 <올바른 관계>를 맺기 위한 나의 3가지 약속',
+      (State.get('promises') || []).map((p, i) => `${['하나', '둘', '셋'][i]}. ${p}`));
 
-    // Q5. 서명
-    x.fillStyle = '#1971c2'; x.font = 'bold 30px Jua, sans-serif';
-    x.fillText('Q5. 나의 다짐 서명', 100, y); y += 20;
-    const sig = State.get('signature');
-    if (sig) {
-      await new Promise(res => {
-        const img = new Image();
-        img.onload = () => {
-          x.fillStyle = '#fff'; x.fillRect(150, y, 700, 288);
-          x.strokeStyle = '#dee2e6'; x.strokeRect(150, y, 700, 288);
-          x.drawImage(img, 150, y, 700, 288);
-          y += 310; res();
-        };
-        img.onerror = res;
-        img.src = sig;
-      });
-    }
-    x.textAlign = 'center';
-    x.fillStyle = '#868e96'; x.font = '22px Jua, sans-serif';
-    x.fillText('성취기준 [6도02-03] 인간과 인공지능 로봇 간에 도덕에 기반을 둔 관계 형성', c.width / 2, c.height - 110);
-    x.fillStyle = '#b8860b'; x.font = 'bold 26px Jua, sans-serif';
-    x.fillText(`${new Date().toLocaleDateString('ko-KR')} · ${State.get('name')}`, c.width / 2, c.height - 70);
+    // 서약문 — wrap 적용(줄바꿈 없이 그리면 긴 문장이 테두리 밖으로 삐져나감)
+    y += 10;
+    x.textAlign = 'center'; x.fillStyle = '#1971c2';
+    const pledgeFont = 'bold 29px Jua, sans-serif';
+    [
+      '나는 <인공지능 로봇 노아>와의 시뮬레이션 과정을 통하여,',
+      '인간과 로봇의 공존에 대한 <도덕적 태도>의 중요성을 인식하고,',
+      '위의 세 가지 약속을 성실히 이행할 것을 약속합니다.',
+    ].forEach(line => {
+      wrap(line, W - PAD * 2, pledgeFont).forEach(l => { x.fillText(l, W / 2, y); y += 46; });
+    });
+    y += 34;
 
-    // 🏅 엔딩 칭호 도장 (우측 하단, 살짝 기울인 스탬프)
-    if (this._ending) {
-      const ed = this._ending;
+    // Q5. 나의 칭호 — 관계 평가 결과를 문장으로 설명하는 배지 카드
+    if (ed) {
+      const color = ed.color || '#4dabf7';
+      const boxX = PAD - 25, boxW = W - (PAD - 25) * 2;
+      // ⚠ wrap()에 넘기는 폰트와 실제로 그리는 폰트를 반드시 동일하게 유지할 것
+      //   (측정 폰트와 렌더 폰트가 다르면 줄바꿈 폭 계산이 틀어져 카드 밖으로 글자가 삐져나감)
+      const descFont = '32px Jua, sans-serif';
+      const descLines = wrap(ed.desc || '', boxW - 90, descFont);
+      const top = y;
+      const boxH = 176 + descLines.length * 40;
       x.save();
-      x.translate(848, c.height - 168);
-      x.rotate(-0.12);
-      x.strokeStyle = '#e8590c'; x.lineWidth = 5;
-      x.beginPath(); x.arc(0, 0, 88, 0, Math.PI * 2); x.stroke();
-      x.lineWidth = 2;
-      x.beginPath(); x.arc(0, 0, 76, 0, Math.PI * 2); x.stroke();
-      x.fillStyle = '#e8590c'; x.textAlign = 'center';
-      x.font = '36px Jua, sans-serif';
-      x.fillText(ed.stamp, 0, -26);
-      x.font = 'bold 21px Jua, sans-serif';
-      const words = ed.title.split(' ');
-      const mid = Math.ceil(words.length / 2);
-      x.fillText(words.slice(0, mid).join(' '), 0, 6);
-      x.fillText(words.slice(mid).join(' '), 0, 34);
+      x.fillStyle = color + '1e';
+      this._roundRectPath(x, boxX, top, boxW, boxH, 22); x.fill();
+      x.strokeStyle = color; x.lineWidth = 3;
+      this._roundRectPath(x, boxX, top, boxW, boxH, 22); x.stroke();
       x.restore();
+
+      let by = top + 56;
+      x.textAlign = 'center';
+      x.fillStyle = '#7c4a03'; x.font = 'bold 35px Jua, sans-serif';
+      x.fillText('오늘 노아와 나의 관계는?', W / 2, by); by += 54;
+      x.font = '52px Jua, sans-serif'; x.fillStyle = color;
+      x.fillText(ed.stamp, W / 2, by); by += 48;
+      x.font = 'bold 35px Jua, sans-serif'; x.fillStyle = '#343a40';
+      x.fillText(ed.title, W / 2, by); by += 46;
+      x.fillStyle = '#495057'; x.font = descFont;
+      descLines.forEach(l => { x.fillText(l, W / 2, by); by += 40; });
+      y = top + boxH;
     }
+
+    // ─── 🎨 내가 그린 학교 그림 + ✍ 나의 다짐 서명 (있을 때만, 흰 카드 위에 배치) ───
+    //   측정(probe)·렌더 두 패스에 동일 media를 넘겨 예약 높이가 같으므로 잘림/여백 없음
+    const imgBlock = (img, title, targetW) => {
+      y += 34;
+      x.textAlign = 'center'; x.fillStyle = '#1971c2'; x.font = 'bold 30px Jua, sans-serif';
+      x.fillText(title, W / 2, y); y += 22;
+      const w = targetW, h = w * img.height / img.width;
+      const ix = (W - w) / 2, iy = y;
+      x.save();
+      x.fillStyle = '#fff';
+      this._roundRectPath(x, ix - 12, iy - 12, w + 24, h + 24, 16); x.fill();
+      x.strokeStyle = '#e8a33d'; x.lineWidth = 3;
+      this._roundRectPath(x, ix - 12, iy - 12, w + 24, h + 24, 16); x.stroke();
+      x.restore();
+      x.drawImage(img, ix, iy, w, h);
+      y += h + 30;
+    };
+    if (media.art) imgBlock(media.art, '🎨 내가 그린 <우리 학교>', 440);
+    if (media.sig) imgBlock(media.sig, '✍ 나의 다짐 서명', 470);
+    return y;
+  },
+
+  /* dataURL → Image (없거나 실패하면 null) — 헌장 이미지 프리로드용 */
+  _loadImg(src) {
+    return new Promise(res => {
+      if (!src) return res(null);
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => res(null);
+      img.src = src;
+    });
+  },
+
+  async charter() {
+    const ed = this._ending;
+    const W = 1000;
+
+    // 🖼️ 학교 그림 + 서명 이미지를 먼저 로드 (양 패스가 동일 media를 써야 예약 높이가 일치) — 없으면 null로 생략
+    const media = {
+      art: await this._loadImg(State.get('schoolArt')),
+      sig: await this._loadImg(State.get('signature')),
+    };
+
+    // ── 1패스: 측정 전용 캔버스로 실제 콘텐츠 높이를 구한다 (내용 길이에 따라 캔버스가 늘어남) ──
+    const probe = document.createElement('canvas').getContext('2d');
+    const contentEndY = this._drawCharterBody(probe, W, ed, media);
+
+    // 하단 날짜/이름을 배지 바로 아래에 앵커링 (콘텐츠 끝에서부터의 간격을 짧게 고정
+    //  — 이전엔 캔버스 하단에서부터 역산해 배지와 날짜 사이에 불필요하게 큰 여백이 생겼었음)
+    const GAP_AFTER_BODY = 56;
+    const dateY = contentEndY + GAP_AFTER_BODY;
+    const nameY = dateY + 52;
+    const H = Math.ceil(nameY) + 46;
+
+    // ── 2패스: 정확한 크기로 실제 그리기 ──
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const x = c.getContext('2d');
+
+    const grad = x.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#fff9e8'); grad.addColorStop(1, '#ffeeda');
+    x.fillStyle = grad; x.fillRect(0, 0, W, H);
+    x.strokeStyle = '#e8a33d'; x.lineWidth = 14; x.strokeRect(28, 28, W - 56, H - 56);
+    x.strokeStyle = '#f3c675'; x.lineWidth = 4; x.strokeRect(52, 52, W - 104, H - 104);
+
+    this._drawCharterBody(x, W, ed, media);
+
+    // 하단 — 날짜·이름을 분리해 각각 라벨과 함께 표기
+    x.fillStyle = '#7c4a03';
+    x.font = 'bold 29px Jua, sans-serif';
+    x.textAlign = 'right';
+    x.fillText(`날짜: ${new Date().toLocaleDateString('ko-KR')}`, W / 2 - 20, dateY);
+      x.textAlign = 'left';
+    x.fillText(`이름: ${State.get('name')}`, W / 2 + 20, dateY);
 
     const url = c.toDataURL('image/png');
     return new Promise(resolve => {

@@ -37,16 +37,16 @@
       <div class="char-cards">
         <div class="char-card" id="card-m" data-gender="m">
           <canvas id="preview-m" width="220" height="260"></canvas>
-          <div class="char-label">👦 남자</div>
+          <div class="char-label">🧒남자</div>
         </div>
         <div class="char-card" id="card-f" data-gender="f">
           <canvas id="preview-f" width="220" height="260"></canvas>
-          <div class="char-label">👧 여자</div>
+          <div class="char-label">👧여자</div>
         </div>
       </div>
       <div class="char-name-row">
         <label for="input-name">이름</label>
-        <input id="input-name" type="text" maxlength="8" placeholder="이름을 입력하세요" autocomplete="off">
+        <input id="input-name" type="text" maxlength="8" placeholder="나의 이름은?" autocomplete="off">
       </div>
       <button id="btn-char-ok" class="big-btn" disabled>✨ 모험을 떠나요!</button>
     </div>
@@ -55,8 +55,8 @@
   <!-- ══════════ 게임 HUD ══════════ -->
   <div id="hud" class="hidden">
     <div id="quest-banner" class="hidden"><span class="q-icon">📌</span><span id="quest-text"></span></div>
-    <button id="notebook-btn">📔 <span id="nb-num">0</span>/9</button>
-    <button id="home-btn" title="처음 화면으로">🏠</button>
+    <button id="notebook-btn">📔 도덕 수첩 <span id="nb-num">0</span>/9</button>
+    <button id="home-btn" title="처음 화면으로">⚙️ 설정</button>
     <div id="bond-gauge" class="hidden">
       <span id="bond-label">💕 친밀도</span>
       <div class="bond-bar"><div id="bond-fill"></div></div>

@@ -28,15 +28,8 @@ const UI = {
     });
     if ('ontouchstart' in window) document.body.classList.add('touch');
     this.els.nbBtn.addEventListener('click', () => { Sound.pop(); DevMode.handleClick(); });
-    // 🏠 처음 화면으로 (실수 방지: '계속하기'를 먼저 배치)
-    this.els.homeBtn.addEventListener('click', async () => {
-      Sound.pop();
-      const ok = await this.choice('🏠 처음 화면으로 돌아갈까요?', [
-        { label: '▶ 계속 모험하기', value: false },
-        { label: '🏠 네, 처음으로 돌아갈래요', value: true },
-      ], '지금까지의 모험은 처음부터 다시 시작돼요. (도덕 수첩 기록은 남아요!)');
-      if (ok) location.reload();
-    });
+    // ⚙️ 설정 패널 열기
+    this.els.homeBtn.addEventListener('click', () => this.openSettings());
     this.initJoystick();
   },
 
@@ -55,6 +48,7 @@ const UI = {
       for (const line of lines) {
         await this.showLine(line);
       }
+      Settings.stopSpeak();                    // 🗣️ 대화 종료 시 읽기 중단
       this.hide(this.els.dlgBox);
       Player.enabled = true;
       resolve();
@@ -73,6 +67,7 @@ const UI = {
       this.els.dlgPortrait.textContent = portrait;
       this.els.dlgSpeaker.textContent = speaker;
       this._fullText = State.fill(line.text);
+      Settings.speak(this._fullText);          // 🗣️ 대사 읽어주기 (설정 켜짐 + 지원 기기)
       this._typing = true;
       this._must = !!line.must;
       this._mustReady = !this._must;
@@ -228,6 +223,94 @@ const UI = {
 
   /* 모션 접근성 헬퍼 */
   motionOK() { return !window.matchMedia('(prefers-reduced-motion: reduce)').matches; },
+
+  /* ⚙️ 설정 패널 — 효과음/배경음악/대사읽기/글자크기/처음부터 다시 시작 */
+  openSettings() {
+    Sound.pop();
+    const ttsOk = Settings.ttsSupported();
+    const ov = this.overlay(`
+      <div class="ov-panel settings-panel">
+        <h3 class="mini-title">⚙️ 설정</h3>
+        <div class="set-row"><span class="set-label">🔊 효과음</span><button class="set-toggle" data-k="sfx"></button></div>
+        <div class="set-row"><span class="set-label">🎵 배경 음악</span><button class="set-toggle" data-k="bgm"></button></div>
+        <div class="set-row"><span class="set-label">🗣️ 대사 읽어주기
+          <small class="set-note">${ttsOk ? '지원 기기에서만 작동해요' : '이 기기는 지원하지 않아요'}</small></span>
+          <button class="set-toggle" data-k="tts" ${ttsOk ? '' : 'disabled'}></button></div>
+        <div class="set-row"><span class="set-label">🔠 글자 크기</span>
+          <div class="set-seg">
+            <button data-f="normal">보통</button><button data-f="large">크게</button><button data-f="xlarge">아주 크게</button>
+          </div></div>
+        <div class="ov-choices">
+          <button class="choice-btn set-restart" style="background:#fff4e6; border-color:#ffa94d; color:#e8590c;">🔄 처음부터 다시 시작</button>
+          <button class="choice-btn set-close">✅ 닫기</button>
+        </div>
+      </div>`);
+    const render = () => {
+      ov.querySelectorAll('.set-toggle').forEach(b => {
+        const on = !!Settings.data[b.dataset.k];
+        b.textContent = on ? 'ON' : 'OFF';
+        b.classList.toggle('on', on);
+      });
+      ov.querySelectorAll('.set-seg button').forEach(b =>
+        b.classList.toggle('on', Settings.data.font === b.dataset.f));
+    };
+    ov.querySelectorAll('.set-toggle').forEach(b => b.onclick = () => {
+      if (b.disabled) return;
+      const k = b.dataset.k;
+      Settings.data[k] = !Settings.data[k];
+      Settings.save(); Settings.apply();
+      if (k === 'bgm' && Settings.data.bgm && Sound._lastSrc) Sound.playBGM(Sound._lastSrc);   // 즉시 재개
+      if (k === 'sfx' && Settings.data.sfx) Sound.pop();          // 켤 때 미리듣기
+      if (k === 'tts' && Settings.data.tts) Settings.speak('안녕하세요! 대사를 읽어드릴게요.');
+      render();
+    });
+    ov.querySelectorAll('.set-seg button').forEach(b => b.onclick = () => {
+      Settings.data.font = b.dataset.f; Settings.save(); Settings.apply(); Sound.pop(); render();
+    });
+    ov.querySelector('.set-close').onclick = () => { Sound.pop(); this.close(ov); };
+    ov.querySelector('.set-restart').onclick = async () => {
+      const how = await this.choice('🔄 처음부터 다시 시작할까요?', [
+        { label: '📔 도덕 수첩 기록은 남기고 다시 시작', value: 'keep' },
+        { label: '🗑️ 전부 지우고 완전히 처음부터', value: 'wipe' },
+        { label: '↩️ 취소', value: null },
+      ], '지금까지의 진행은 사라져요.');
+      if (!how) return;
+      try {
+        localStorage.removeItem('noah_save');
+        if (how === 'wipe') localStorage.removeItem('noah_notebook_all');
+      } catch (e) {}
+      location.reload();
+    };
+    render();
+  },
+
+  /* 🎮 집에서 시작 시 조작 안내 팝업 (첫 플레이 사용성 — PC/태블릿 분기) */
+  tutorial() {
+    return new Promise(resolve => {
+      const touch = document.body.classList.contains('touch');
+      const rows = [
+        { icon: '🕹️', title: '이동하기',       pc: 'W A S D · 방향키',     tab: '왼쪽 아래 <b>조이스틱</b>' },
+        { icon: '💬', title: '상호작용 · 대화',  pc: '<b>F</b> 키',           tab: '오른쪽 아래 <b>F</b> 버튼' },
+        { icon: '⬆️', title: '점프하기',        pc: '<b>Space</b> (스페이스바)', tab: '오른쪽 아래 <b>⬆</b> 버튼' },
+        { icon: '📔', title: '⭐도덕 수첩 확인',   pc: '왼쪽 위 <b>📔</b> 버튼',  tab: '왼쪽 위 <b>📔</b> 버튼' },
+        { icon: '⚙️', title: '설정 확인',        pc: '오른쪽 위 <b>⚙️</b> 버튼', tab: '오른쪽 위 <b>⚙️</b> 버튼' },
+      ];
+      const ov = this.overlay(`
+        <div class="ov-panel tuto-panel">
+          <h3 class="mini-title">🎮 조작 방법 안내</h3>
+          <p class="ov-sub">노아를 만나러 가기 전에, 조작법을 익혀 볼까요? (${touch ? '태블릿' : 'PC'})</p>
+          <div class="tuto-grid">
+            ${rows.map(r => `
+              <div class="tuto-item">
+                <div class="tuto-ico">${r.icon}</div>
+                <div class="tuto-txt"><b>${r.title}</b><span>${touch ? r.tab : r.pc}</span></div>
+              </div>`).join('')}
+          </div>
+          <div class="ov-choices"><button class="choice-btn tuto-ok">🚀 알겠어요! 시작할게요</button></div>
+        </div>`);
+      ov.querySelector('.tuto-ok').onclick = () => { Sound.win(); this.close(ov); resolve(); };
+    });
+  },
 
   /* O/X 질문 (수미상관) — 선택하면 3D 동전이 뒤집혀 내 대답 면으로 착지.
      prev(1회차 대답)를 주면 옛 동전을 나란히 놓아 생각의 변화를 비교 */
@@ -415,12 +498,16 @@ const UI = {
 /* ═══════════ Sound — WebAudio 간단 효과음 ═══════════ */
 const Sound = {
   ctx: null,
+  sfxOn: true,          // ⚙️ 설정: 효과음 on/off
+  bgmOn: true,          // ⚙️ 설정: 배경음악 on/off
+  _lastSrc: null,       // 마지막으로 요청된 BGM (토글 재개용)
   _ac() {
     if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
     if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
     return this.ctx;
   },
   tone(freq, dur = 0.12, type = 'sine', vol = 0.15, when = 0) {
+    if (!this.sfxOn) return;                 // ⚙️ 효과음 꺼짐
     const ac = this._ac(); if (!ac) return;
     const o = ac.createOscillator(), g = ac.createGain();
     o.type = type; o.frequency.value = freq;
@@ -442,7 +529,9 @@ const Sound = {
      자동재생이 차단되면 첫 사용자 상호작용(클릭/터치/키) 시 처음부터 재생 */
   bgm: null,
   playBGM(src, opts = {}) {
+    this._lastSrc = src;
     this.stopBGM();
+    if (!this.bgmOn) return;                 // ⚙️ 배경음악 꺼짐 (토글 시 _lastSrc로 재개)
     const a = new Audio(src);
     a.loop = opts.loop !== false;
     a.volume = opts.volume ?? 0.35;
@@ -458,6 +547,7 @@ const Sound = {
     if (this.bgm) { this.bgm.pause(); this.bgm = null; }
   },
   fadeOutBGM(ms = 700) {
+    this._lastSrc = null;                    // 씬이 의도적으로 음악을 끝냄 → 토글 재개 대상에서 제외
     const a = this.bgm;
     if (!a) return;
     const startVol = a.volume;
@@ -473,4 +563,36 @@ const Sound = {
       }
     }, 40);
   },
+};
+
+/* ═══════════ ⚙️ Settings — 효과음·BGM·대사읽기(TTS)·글자크기 (localStorage 유지) ═══════════ */
+const Settings = {
+  data: { sfx: true, bgm: true, tts: false, font: 'normal' },   // font: normal | large | xlarge
+  load() {
+    try { Object.assign(this.data, JSON.parse(localStorage.getItem('noah_settings') || '{}')); } catch (e) {}
+  },
+  save() { try { localStorage.setItem('noah_settings', JSON.stringify(this.data)); } catch (e) {} },
+  ttsSupported() { return 'speechSynthesis' in window; },
+  apply() {
+    Sound.sfxOn = this.data.sfx;
+    Sound.bgmOn = this.data.bgm;
+    if (!this.data.bgm) Sound.stopBGM();
+    document.body.classList.toggle('fs-large', this.data.font === 'large');
+    document.body.classList.toggle('fs-xlarge', this.data.font === 'xlarge');
+    if (!this.data.tts) this.stopSpeak();
+  },
+  init() { this.load(); this.apply(); },
+  /* 🗣️ 대사 읽어주기 — ko-KR speechSynthesis (지원 기기에서만) */
+  speak(text) {
+    if (!this.data.tts || !this.ttsSupported()) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(String(text).replace(/[<>*]/g, ' '));
+      u.lang = 'ko-KR'; u.rate = 1.0; u.pitch = 1.05;
+      const ko = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith('ko'));
+      if (ko) u.voice = ko;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  },
+  stopSpeak() { if (this.ttsSupported()) { try { speechSynthesis.cancel(); } catch (e) {} } },
 };
