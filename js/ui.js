@@ -55,6 +55,25 @@ const UI = {
     });
   },
 
+  /* 🎨 리치 텍스트 — 대사 마크업을 세그먼트 [{text, cls}]로 파싱.
+     **강조** → hl-blue(파랑) · <b>..</b> → hl-bold · <꺾쇠> → hl-key(노랑, 꺾쇠 문자는 그대로 표시)
+     HTML 문자열을 만들지 않고 span+textContent로 렌더하므로 이스케이프·태그 깨짐이 원천 차단됨 */
+  rich(text) {
+    const segs = [];
+    const push = (t, cls) => { if (t) segs.push({ text: t, cls }); };
+    const re = /\*\*(.+?)\*\*|<b>([^<]*?)<\/b>|<([^<>\n]+)>/g;
+    let last = 0, m;
+    while ((m = re.exec(text))) {
+      push(text.slice(last, m.index), null);
+      if (m[1] !== undefined) push(m[1], 'hl-blue');
+      else if (m[2] !== undefined) push(m[2], 'hl-bold');
+      else push('<' + m[3] + '>', 'hl-key');
+      last = m.index + m[0].length;
+    }
+    push(text.slice(last), null);
+    return segs;
+  },
+
   showLine(line) {
     return new Promise(resolve => {
       let speaker = line.speaker;
@@ -67,29 +86,48 @@ const UI = {
       this.els.dlgPortrait.textContent = portrait;
       this.els.dlgSpeaker.textContent = speaker;
       this._fullText = State.fill(line.text);
-      Settings.speak(this._fullText);          // 🗣️ 대사 읽어주기 (설정 켜짐 + 지원 기기)
+      Settings.speak(this._fullText);          // 🗣️ 대사 읽어주기 (필터가 * < > 제거 — 마크업 안 읽음)
       this._typing = true;
       this._must = !!line.must;
       this._mustReady = !this._must;
       clearTimeout(this._mustTimer);
       this.hide(this.els.dlgNext);
       this._dlgResolve = resolve;
-      this.els.dlgText.textContent = '';
+      // 세그먼트 타이핑 준비 — 강조 span을 미리 만들어 두고 글자를 하나씩 채운다 (태그 잘림 없음)
+      const box = this.els.dlgText;
+      box.textContent = '';
+      this._segs = this.rich(this._fullText);
+      this._spans = this._segs.map(s => {
+        const sp = document.createElement('span');
+        if (s.cls) sp.className = s.cls;
+        box.appendChild(sp);
+        return sp;
+      });
+      this._flat = [];                          // [세그번호, 글자] — Array.from으로 이모지(서로게이트 쌍) 안전
+      this._segs.forEach((s, si) => Array.from(s.text).forEach(ch => this._flat.push([si, ch])));
+      this._plainLen = this._flat.length;       // 마크업 기호를 뺀 순수 글자 수 (must 체류시간용)
       let i = 0;
       const tick = () => {
         if (!this._typing) return;
-        this.els.dlgText.textContent = this._fullText.slice(0, ++i);
-        if (i < this._fullText.length) this._typeTimer = setTimeout(tick, 26);
+        const f = this._flat[i++];
+        this._spans[f[0]].textContent += f[1];
+        if (i < this._flat.length) this._typeTimer = setTimeout(tick, 26);
         else { this._typing = false; this._onTypeDone(); }
       };
-      tick();
+      if (this._flat.length) tick();
+      else { this._typing = false; this._onTypeDone(); }
     });
+  },
+
+  /* 타이핑 스킵 — 남은 세그먼트를 한 번에 채움 */
+  _typeFill() {
+    (this._segs || []).forEach((s, si) => { this._spans[si].textContent = s.text; });
   },
 
   /* 타이핑 완료 → 일반: 즉시 ▼ / 중요(must): 글자수 비례 체류시간 후 ▼ */
   _onTypeDone() {
     if (this._must) {
-      const dwell = Math.max(800, this._fullText.length * 40);
+      const dwell = Math.max(800, (this._plainLen || this._fullText.length) * 40);
       this._mustTimer = setTimeout(() => {
         this._mustReady = true;
         this.show(this.els.dlgNext);
@@ -104,7 +142,7 @@ const UI = {
       if (this._must) return;     // 📖 중요 대사: 타이핑 스킵 불가
       this._typing = false;
       clearTimeout(this._typeTimer);
-      this.els.dlgText.textContent = this._fullText;
+      this._typeFill();
       this._onTypeDone();
     } else if (this._dlgResolve) { // 다음 대사로
       if (!this._mustReady) return; // 📖 체류시간 전 클릭 무시
@@ -378,11 +416,12 @@ const UI = {
         lineEl.style.animation = 'none';
         void lineEl.offsetWidth;
         lineEl.style.animation = '';
-        // **텍스트** → 노란 강조, \n → 줄바꿈 (도덕 키워드 강조용)
+        // **텍스트** → 노란 강조, <꺾쇠> → 파란 강조(꺾쇠 문자 유지), \n → 줄바꿈 (도덕 키워드 강조용)
         const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const plain = State.fill(lines[idx++]);
         lineEl.innerHTML = esc(plain)
           .replace(/\*\*(.+?)\*\*/g, '<span class="big-hl">$1</span>')
+          .replace(/&lt;(.+?)&gt;/g, '<span class="big-key">&lt;$1&gt;</span>')
           .replace(/\n/g, '<br>');
         Sound.chime();
         if (opts.must) {   // 📖 중요 연출: 글자수 비례 체류시간 후에만 다음으로
@@ -411,10 +450,12 @@ const UI = {
         ${opts.skip ? '<button class="cine-skip hidden">건너뛰기 ▶▶</button>' : ''}`, 'cine-ov');
       const v = ov.querySelector('video');
       const loading = ov.querySelector('.cine-loading');
-      let done = false;
+      let done = false, guard = null, retryCleanup = null;
       const finish = () => {
         if (done) return;
         done = true;
+        if (guard) clearTimeout(guard);
+        if (retryCleanup) retryCleanup();
         try { v.pause(); } catch (e) {}
         this.close(ov);
         resolve();
@@ -428,15 +469,20 @@ const UI = {
         setTimeout(() => { if (!done) skipBtn.classList.remove('hidden'); }, opts.skipDelay || 0);
       }
       v.src = src;
-      // 소리와 함께 재생 시도 — 자동재생이 막히면 음소거하지 않고,
-      // 첫 사용자 상호작용(클릭/터치/키) 때 소리와 함께 재생 (BGM과 동일한 패턴)
+      // 소리와 함께 재생 시도 — 자동재생이 막히면 첫 사용자 상호작용(클릭/터치/키) 때 재생
       v.play().catch(() => {
         loading.textContent = '화면을 한 번 눌러 주세요 ▶';
-        const retry = () => { if (!done) v.play().catch(() => {}); };
-        ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
-          document.addEventListener(ev, retry, { once: true }));
+        const evs = ['pointerdown', 'keydown', 'touchstart'];
+        // ⚠ once 제거 — 첫 탭의 play()가 실패해도(태블릿 잦음) 성공할 때까지 리스너 유지
+        const retry = () => {
+          if (done) return;
+          v.play().then(() => { if (retryCleanup) retryCleanup(); }).catch(() => {});
+        };
+        retryCleanup = () => { evs.forEach(ev => document.removeEventListener(ev, retry)); retryCleanup = null; };
+        evs.forEach(ev => document.addEventListener(ev, retry));
       });
-      setTimeout(() => { if (!done && v.readyState < 2) finish(); }, 15000);   // 로드 실패 안전장치
+      // 로드 실패 안전장치 — 느린 태블릿에서 큰 인트로가 로드 중이면 스킵하지 않도록 상향(45s) + 조건 완화(readyState<1=아예 못 받음)
+      guard = setTimeout(() => { if (!done && v.readyState < 1) finish(); }, 45000);
     });
   },
 
@@ -463,25 +509,29 @@ const UI = {
     let active = false, cx = 0, cy = 0, pid = null;
     const R = 48;
 
-    zone.addEventListener('pointerdown', e => {
-      active = true; pid = e.pointerId;
-      cx = e.clientX; cy = e.clientY;
-      base.style.display = 'block';
-      base.style.left = (cx - zone.getBoundingClientRect().left - 65) + 'px';
-      base.style.top = (cy - zone.getBoundingClientRect().top - 65) + 'px';
-      zone.setPointerCapture(pid);
-    });
-    zone.addEventListener('pointermove', e => {
-      if (!active || e.pointerId !== pid) return;
-      let dx = e.clientX - cx, dy = e.clientY - cy;
+    // 조이스틱은 왼쪽 아래에 항상 고정 표시 (CSS로 위치 고정) — 베이스 중심을 기준으로 knob만 이동
+    const applyKnob = (clientX, clientY) => {
+      let dx = clientX - cx, dy = clientY - cy;
       const len = Math.hypot(dx, dy);
       if (len > R) { dx = dx / len * R; dy = dy / len * R; }
       knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
       this.joyVec.x = dx / R; this.joyVec.y = dy / R;
+    };
+    zone.addEventListener('pointerdown', e => {
+      active = true; pid = e.pointerId;
+      const br = base.getBoundingClientRect();
+      cx = br.left + br.width / 2; cy = br.top + br.height / 2;   // 고정 베이스 중심 기준
+      base.classList.add('active');
+      zone.setPointerCapture(pid);
+      applyKnob(e.clientX, e.clientY);                            // 누른 즉시 방향 반영
+    });
+    zone.addEventListener('pointermove', e => {
+      if (!active || e.pointerId !== pid) return;
+      applyKnob(e.clientX, e.clientY);
     });
     const end = e => {
       if (e.pointerId !== pid) return;
-      active = false; base.style.display = 'none';
+      active = false; base.classList.remove('active');
       knob.style.transform = 'translate(-50%,-50%)';
       this.joyVec.x = 0; this.joyVec.y = 0;
     };

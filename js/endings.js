@@ -133,7 +133,7 @@ const Endings = {
 
     // 재프레이밍 — 감정은 로봇이 아니라 '우리'의 것 (지도서 지도 중점)
     await UI.bigText([
-      '노아는 슬퍼서 멈춘 것이 아닙니다.\n**도덕 원칙**과는 다른 [관계 데이터] 때문에,\n동작을 멈춘 것입니다...'
+      '노아는 슬퍼서 멈춘 것이 아닙니다.\n**도덕 원칙과는 다른 [관계 데이터]** 때문에,\n동작을 멈춘 것입니다...'
       
     ], { bg: 'rgba(2,2,8,.98)' });
 
@@ -338,9 +338,11 @@ const Endings = {
 
     const fin = UI.overlay(`
       <div style="text-align:center;">
-        <div style="font-size:90px;">🤖💙</div>
+        <img class="ending-noah" src="media/temporary_files/ending_noah_image.png" alt="노아"
+             style="width:min(340px,64vw); height:auto; margin-bottom:8px;"
+             onerror="this.outerHTML='<div style=\\'font-size:90px\\'>🤖💙</div>'">
         <p style="color:#ffe066; font-size:clamp(16px,2.6vw,22px); margin-bottom:4px;">${ed.stamp} ${ed.title}</p>
-        <h1 style="color:#fff; font-size:clamp(20px,4vw,35px); margin:10px 0 16px;"> 인공지능 로봇 <노아>와의 시뮬레이션 모험을 통하여,
+        <h1 style="color:#fff; font-size:clamp(20px,4vw,35px); margin:10px 0 16px;"> 인공지능 로봇 <노아>와의 시뮬레이션 모험을 통하여, <br>
       로봇에 대한 <도덕적 태도>의 중요성을 이해하는 시간이 되었길 바라요.</h1>
         <h1 style="color:#ffe066;">
                 <노아>와 함께해줘서 진심으로 고마워요💌, ${State.get('name')}!</h1>

@@ -24,6 +24,7 @@ const Flow = {
   /* ═══════ 1-3 집에서 시작 ═══════ */
   async begin() {
     this.phase = 1; this.step = 'home';
+    Sound.playBGM('media/bgm2_toward_the_school.mp3');   // 🎵 등굣길 BGM (거울4 티볼 진입 시 페이드아웃)
     this.logsRead = false; this.logs5Read = false; this._chatIdx = 0; this._chatBags = {};
     this.talked = new Set(); this.talkedLog = new Map(); this._recapShown = false;
     UI.updateNotebook();
@@ -97,7 +98,7 @@ const Flow = {
   /* ═══════ 2-1 월드맵 튜토리얼 (마리오 감성 별 모으기) ═══════ */
   async goWorldmap1() {
     this.step = 'tutorial';
-    Sound.playBGM('media/bgm2_toward_the_school.mp3');   // 🎵 등굣길 BGM (학교 교실 진입 시 페이드아웃)
+    // 🎵 등굣길 BGM은 begin()에서 이미 재생 중 — 씬 전환과 무관하게 계속 이어짐 (거울4 티볼 진입 시 페이드아웃)
     await World.go('worldmap', { x: -17, z: 19, ry: Math.PI });
     World.setBeacon(1.5, -4.5);
     await UI.dialogue(DATA.dlg.worldmapTutorial);
@@ -320,7 +321,7 @@ if (noah.group.children.length > 0) {
   /* ═══════ 3-1 거울1 : 노아와의 첫 만남 ═══════ */
   async enterClassroom1() {
     this.step = 'ep_mirror1';
-    Sound.fadeOutBGM();                        // 🎵 등굣길 BGM 페이드아웃 (학교 도착)
+    // 🎵 등굣길 BGM은 교실(거울1~3)에서도 계속 이어짐 — 거울4 티볼 진입 시 페이드아웃
     UI.clearQuest();
     await World.go('classroom', { x: 3.0, z: 4.8, ry: Math.PI });
     this.setupClassroomNPCs(false);
@@ -386,8 +387,13 @@ if (noah.group.children.length > 0) {
     await UI.dialogue(DATA.dlg.mirror2_intro);
     await Mini.mathBattle();
     await UI.dialogue(DATA.dlg.mirror2_after);
-    // 📚 데이터 편향 씬 — 동혁의 거짓 학습(한글=이순신) → 오답 발표 → 폭소 (AI는 가르친 대로 배운다)
-    await UI.dialogue(DATA.dlg.bias1);
+    // 📚 데이터 편향 — 🧠 노아 두뇌 데이터 주입기 (CSS 3D): 동혁의 거짓 데이터를 막지 못하고 노아가 오염됨
+    // (2-4 대사 다이어트 — 학습 선언·퀴즈·폭소·선생님 교정은 전부 주입기 안에서 연출.
+    //  ⚠ bias1[2]·[4..10]과 bias1After[0..1]은 주입기가 대체 — 대사를 수정하면 아래 인덱스 조정!)
+    await UI.dialogue(DATA.dlg.bias1.slice(0, 2));   // 쉬는 시간 — 동혁의 속닥임(거짓말)
+    await UI.dialogue([DATA.dlg.bias1[3]]);           // "(어? 잠깐, 그거 아닌데...!)" — 막아야 할 이유
+    await Mini.dataInjector();                        // ⓪지식 확인 → 분열 터뜨리기 → 오염 연쇄 → 예측 퀴즈
+    await UI.dialogue(DATA.dlg.bias1After.slice(2));  // 노아의 혼란 + 마무리 독백
     UI.setBond('intimacy', 50);              // 💕 거울2 완료
     await this.mirror3();
   },
@@ -414,8 +420,10 @@ if (noah.group.children.length > 0) {
   /* ═══════ 3-4 거울4 : 티볼 등급 분류 사건 ═══════ */
   async enterPlayground1() {
     this.step = 'ep_mirror4';
+    Sound.fadeOutBGM();                        // 🎵 등굣길 BGM 페이드아웃 (거울4 티볼 진입)
     UI.clearQuest();
     await World.go('playground', { x: 0, z: -2, ry: 0 });
+    Sound.playBGM('media/bgm3_playground.mp3'); // 🎵 운동장 BGM (거울4~복도1~거울5, 4단계 가짜 엔딩 직전 페이드아웃)
     World.addNPC(Chars.teacher(), -4, -8, 0.5);
     this.addFriendZone('teacher', '선생님과 이야기하기', -4, -8);
     World.addNPC(Chars.donghyuk(), 4, 4, -0.8);
@@ -435,11 +443,25 @@ if (noah.group.children.length > 0) {
     await UI.dialogue(DATA.dlg.mirror4_intro);
 
     // 🦿 노아 모방 사건 (B안) — 행동 데이터 오염: 채원의 장난 발길질을 노아가 그대로 학습·재현
+    // (2-1 스테이징 — 대사는 그대로, 사이에 연출층. ⚠ imitate1b 대사를 추가/삭제하면 아래 slice 경계 조정!)
     await UI.dialogue(DATA.dlg.imitate1a);
+    await FX.cut('media/temporary_files/cut_imitate_watch.png', { hold: 800 });   // 🎬 발길질 한 컷 (이미지 없으면 자동 통과)
+    await FX.dataLearn('👁 행동 데이터 관찰 중...', '친한 사이 = 발로 가볍게 참'); // 📼 관찰 게이지 → 카드가 DB에 딸깍
     this.noahMoment('idle', { dist: 2.8, height: 1.4, lookH: 1.15 });   // 🎥 갸우뚱하는 노아 클로즈업
-    await UI.dialogue(DATA.dlg.imitate1b);
+    await UI.dialogue(DATA.dlg.imitate1b.slice(0, 4));                  // 갸우뚱 질문 → "저장 완료" → 오싹한 독백
+    FX.vignette(true);                                                  // 🌑 긴장 — 화면 가장자리가 어두워진다
+    FX.heartbeat(6, 0.8, 0.82);                                         // 💓 심박이 점점 빨라진다
+    FX.vibrate([40, 320, 40, 280, 40]);                                 // 걸음마다 짧은 진동
+    await UI.dialogue(DATA.dlg.imitate1b.slice(4, 7));                  // 뚜벅뚜벅... 다리를 천천히 들어 올린다
+    await Mini.stopButton('tool');                                      // 🛑 멈춰! → "명령 대기 목록에 없음" + 버튼이 부서진다 (무력감)
+    await FX.cut('media/temporary_files/cut_imitate_kick.png', { hold: 1100 }); // 🎬 정지된 한 컷 (접촉 직전)
+    FX.flash('#ff5c5c', 220); FX.shake(14, 500); FX.vibrate(180);       // ⚡ "툭" — 충격만, 접촉은 보여주지 않음
+    await UI.dialogue(DATA.dlg.imitate1b.slice(7, 10));                 // 툭 — 동혁의 비명
+    FX.murmur(); FX.shake(6, 400);                                      // 🗣 아이들의 웅성거림
+    await UI.dialogue(DATA.dlg.imitate1b.slice(10));                    // 동요 + 새파랗게 질린 채원
     this.noahMoment('scared');                                          // 🎥 술렁이는 아이들 앞, 움츠러드는 노아
     await UI.dialogue(DATA.dlg.imitate1c);
+    FX.vignette(false);
     this.noahRest();
     UI.setBond('intimacy', 85);              // 💕 거울4 완료
 
@@ -480,6 +502,7 @@ if (noah.group.children.length > 0) {
     await UI.dialogue(DATA.dlg.mirror5_intro);
     UI.setBond('intimacy', 100);             // 💕 친밀도 100% 달성...?
     await UI.wait(1400);
+    Sound.fadeOutBGM();                      // 🎵 운동장 BGM 페이드아웃 (4단계 가짜 엔딩 진입)
     // ═══ 4단계: 가짜 엔딩 → 시스템 오류 → 재시작(7942) ═══
     await Endings.fakeEnding();
     await this.startPhase2();
@@ -488,6 +511,7 @@ if (noah.group.children.length > 0) {
   /* ═══════ 5단계 시작 : 붉은 월드맵, 집에서 재시작 ═══════ */
   async startPhase2() {
     this.phase = 2; this.step = 'home2';
+    Sound.playBGM('media/bgm4_respect.mp3');   // 🎵 존중편 BGM (5단계 시작~엔딩까지 계속 반복)
     World.redMode = true;
     Player.clearFocus();                     // 🎥 반전 연출 카메라 포커스 해제
     UI.clearQuest();
@@ -555,8 +579,12 @@ if (noah.group.children.length > 0) {
     await UI.dialogue(DATA.dlg.respect2_intro);
     await Mini.mathSelf();
     await UI.dialogue(DATA.dlg.respect2_after);
-    // 📚 데이터 교정 씬 — 같은 장난을 이번엔 내가 막고, 동혁이 사과·재학습 (편향은 고칠 수 있다)
-    await UI.dialogue(DATA.dlg.bias2);
+    // 📚 데이터 교정 — 같은 장난을 이번엔 내가 막고, 동혁이 사과·재학습 (편향은 고칠 수 있다)
+    // 🔧 교정실(2-2): 사과 카드를 "내 손으로" 슬롯에 꽂는다 — 도구화의 도망가는 차단 버튼과 수미상관
+    // ⚠ bias2[5..8](교정 완료·퀴즈·딩동댕)는 교정실 연출로 대체됨 — 대사를 추가/삭제하면 slice 경계 조정!
+    await UI.dialogue(DATA.dlg.bias2.slice(0, 5));   // 장면 재현 → 내가 말림 → 동혁의 사과 "한글은 세종대왕이야!"
+    await Mini.dataCorrector();                       // 오염 슬롯 ❌ → 내 손으로 교정 → 정화 → 퀴즈 재플립 → 🎊
+    await UI.dialogue(DATA.dlg.bias2.slice(9));      // 마무리 독백 (💡 잘못 배운 것도 고칠 수 있어)
     UI.setBond('respect', 40);               // 💙 거울2(존중) 완료
     await this.respect3();
   },
@@ -613,7 +641,12 @@ if (noah.group.children.length > 0) {
     // 🙌 모방 사건 수미상관 — 채원의 하이파이브를 배우는 노아 (좋은 행동도 그대로 배운다)
     await UI.dialogue(DATA.dlg.imitate2a);
     this.noahMoment('greet', { dist: 2.8, height: 1.4, lookH: 1.15 });  // 🎥 하이파이브 — 인사 클립
-    await UI.dialogue(DATA.dlg.imitate2b);
+    // (2-3 스테이징 — 대사는 그대로. 동혁과의 하이파이브 직전에 허락 버튼+컷+컨페티. ⚠ imitate2b 대사를 추가/삭제하면 slice 경계 조정!)
+    await UI.dialogue(DATA.dlg.imitate2b.slice(0, 2));                // 노아 "데이터 업데이트... 동혁님!" → 동혁 놀람
+    await Mini.stopButton('permit');                                   // 🤚 노아가 허락을 구한다 — 도구화 멈춰 버튼과 같은 자리, 이번엔 통한다
+    await FX.cut('media/temporary_files/cut_highfive.png', { hold: 900 }); // 🎬 짝! 하이파이브 한 컷 (이미지 없으면 자동 통과)
+    FX.confetti({ y: 0.45, count: 80 }); FX.cheer();
+    await UI.dialogue(DATA.dlg.imitate2b.slice(2));                   // "(하이파이브 소리...)" → 동혁 "한 번 더!" → 독백
     this.noahRest();
 
     this.step = 'toHallway2';
@@ -678,13 +711,13 @@ if (noah.group.children.length > 0) {
     const promises = await Mini.choosePromises();
     State.set('promises', promises);
     await UI.dialogue([
-      { speaker: '노아', text: '멋진 약속이에요! 저도 여러분에게 안전하고 따뜻한 친구...가 되도록 노력할게요!', emotion: 'happy' },
+      { speaker: '노아', text: '멋진 약속이에요! 저도 여러분에게 안전하고 따뜻한 로봇...이 되도록 노력할게요!', emotion: 'happy' },
     ]);
 
     // ⑥ 스스로 정하는 관계 문항 — "나는 노아를 ___(으)로 대하겠습니다"
     await UI.dialogue(DATA.dlg.relationAsk);
-    const rel = await UI.textInput('나는 노아를 ______(으)로 대하겠습니다.',
-      '예) 반 친구, 똑똑한 도우미, 특별한 짝꿍...', '정답은 없어요! 노아는 사람도, 단순한 도구도 아니니까요.');
+    const rel = await UI.textInput('나는 앞으로 노아를 _________(으)로 대하겠습니다. <br> (스스로 정하는 우리의 관계!)',
+      '예) 반 친구, 똑똑한 도우미, 특별한 짝꿍, ...', '정답은 없어요! 노아는 사람도, 단순한 도구도 아니니까요.');
     State.set('relationDef', rel);
     await UI.dialogue([
       { speaker: '노아', text: `'${rel}'... 저장하지 않아도 잊을 수 없는 대답입니다. 그 마음을 헌장에 새겨 주세요!`, emotion: 'happy' },

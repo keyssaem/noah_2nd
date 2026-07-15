@@ -85,7 +85,7 @@ const World = {
       });
     }
   },
-  kitReady() { return typeof Assets !== 'undefined' && Assets.isLoaded('k_wall'); },
+  kitReady() { return false; },   // 켄니 GLB 비활성 → 박스 폴백 강제 (태블릿 GLB 깨짐 대응)
 
   /* 키트 부품 1개를 부모 그룹의 타일 좌표에 배치 (sc: 스칼라 또는 [x,y,z] 스케일) */
   piece(parent, name, x, y, z, ry = 0, sc = null) {

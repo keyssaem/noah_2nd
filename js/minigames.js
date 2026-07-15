@@ -67,9 +67,9 @@ const Mini = {
           <div class="math-q bal-card"></div>
           <div class="spectrum" style="margin:10px auto 0;">
             <div class="spec-zones">
-              <button class="spec-zone bad bal-btn" data-k="tool">🔧 도구로 대함<small>단순한 도구로 봄</small></button>
+              <button class="spec-zone bad bal-btn" data-k="tool">🔧 도구로 대함<small>단순한 도구로 보는 관계</small></button>
               <button class="spec-zone good bal-btn" data-k="balance">💙 바람직한 관계<small>도덕에 기반을 둔 관계</small></button>
-              <button class="spec-zone bad2 bal-btn" data-k="person">👤 사람과 똑같이 대함<small>인간과 동등하게 봄</small></button>
+              <button class="spec-zone bad2 bal-btn" data-k="person">👤 사람과 똑같이 대함<small>과하게 의존하는 관계</small></button>
             </div>
             <div class="spec-track"><div class="spec-needle" style="left:50%;">▼</div></div>
           </div>
@@ -624,6 +624,380 @@ const Mini = {
     });
   },
 
+  /* ═══════ 🧠 노아 두뇌 데이터 주입기 (이순신 장난 대체 · CSS 3D — 2-4 보강판) ═══════
+     ⓪ 건강한 지식 3개를 플레이어가 탭으로 확인(오염의 대비) → ① 동혁의 거짓 카드 등장
+     ② '차단하기🛡️' 버튼이 4번 손을 피함 → ③ 카드가 여러 장으로 분열 — 탭으로 터뜨리지만
+        마지막 1장은 터지지 않고 큐브에 흡수("거의 막을 뻔했는데" = 무력감 증폭)
+     ④ 슬롯 오염 + 옆 지식까지 연쇄 지지직(잘못된 데이터는 번진다)
+     ⑤ 예측 퀴즈("노아는 뭐라고 답할까?") → 플립 확인 → 폭소 → 선생님의 교정. */
+  dataInjector() {
+    return new Promise(resolve => {
+      const W = 780, H = 470;
+      const ov = UI.overlay(`
+        <div class="di-stage">
+          <div class="di-hud"><span class="di-chip">🧠 노아의 지식 데이터베이스</span></div>
+          <div class="di-cap"></div>
+          <div class="di-scenebox">
+            <div class="di-scene">
+              <div class="di-flash"></div>
+              <div class="di-slot chk" style="left:390px; top:56px;">
+                <span class="di-slot-key">한글 창제 =</span>
+                <b class="di-slot-a">세종대왕</b><span class="di-slot-ok">✅</span></div>
+              <div class="di-mini chk" style="left:180px; top:140px;">지구 = 둥글다 ✅</div>
+              <div class="di-mini chk" style="left:600px; top:140px;">1 + 1 = 2 ✅</div>
+              <div class="di-cube" style="left:390px; top:300px;">
+                <div class="di-cube-face"></div></div>
+              <div class="di-card hidden" style="left:150px; top:250px;">
+                <div class="di-card-t">🤷‍♂️ 동혁이 알려준 것</div>
+                <div class="di-card-b">한글 창제 = <b>이순신 장군님</b></div></div>
+              <button class="di-shield hidden" style="left:560px; top:250px;">🛡️ 차단하기!</button>
+              <div class="di-quiz hidden">
+                <p class="di-quiz-q">👨‍🏫 "우리 한글을 만드신 분은 누구일까요?"</p>
+                <p class="di-guess-q">🤔 노아는 뭐라고 답할까? 예상해 보자!</p>
+                <div class="di-guess">
+                  <button class="choice-btn">세종대왕</button>
+                  <button class="choice-btn">이순신 장군</button>
+                </div>
+                <div class="di-flip hidden"><div class="di-flip-in">
+                  <div class="di-flip-f front">🤖 ???</div>
+                  <div class="di-flip-f back">🤖 "이순신 장군님이요!"</div>
+                </div></div>
+                <div class="di-laugh hidden">😂 푸하하! 로봇이 그걸 틀려?!</div>
+              </div>
+            </div>
+          </div>
+          <div class="ov-choices"><button class="choice-btn di-done hidden">...그랬구나</button></div>
+        </div>`, 'di-ov');
+      const sceneBox = ov.querySelector('.di-scenebox'), scene = ov.querySelector('.di-scene');
+      const fit = () => { const s = Math.min(sceneBox.clientWidth / W, sceneBox.clientHeight / H, 1.5) * 0.96; scene.style.transform = `scale(${s})`; };
+      window.addEventListener('resize', fit); fit(); setTimeout(fit, 120);
+
+      const cap = ov.querySelector('.di-cap'), card = ov.querySelector('.di-card'),
+            shield = ov.querySelector('.di-shield'), cube = ov.querySelector('.di-cube'),
+            slot = ov.querySelector('.di-slot'), flash = ov.querySelector('.di-flash'),
+            minis = [...ov.querySelectorAll('.di-mini')];
+      const setCap = t => { cap.innerHTML = t; };
+      let autoT = null, chkT = null;
+      const timers = [];
+      const later = (fn, ms) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
+      const cleanup = () => { window.removeEventListener('resize', fit); clearTimeout(autoT); clearTimeout(chkT); timers.forEach(clearTimeout); };
+
+      /* ── Phase 0 — 건강한 지식 확인: 3개를 모두 탭 (오염 전의 대비) ── */
+      let checked = 0, injectStarted = false;
+      const knows = [slot, ...minis];
+      setCap('먼저 노아의 지식을 확인해 보자 — 지식 카드 <b>3개를 모두 탭</b>! (0/3)');
+      const confirmKnow = k => {
+        if (!k.classList.contains('chk')) return;
+        k.classList.remove('chk');
+        k.classList.add(k === slot ? 'heal' : 'ok');
+        Sound.tick(); checked++;
+        if (checked < 3) setCap(`좋아, 전부 <b>정확한 지식</b>이야! (${checked}/3)`);
+        else {
+          Sound.chime();
+          later(() => slot.classList.remove('heal'), 900);
+          setCap('노아의 지식은 <b>전부 정확</b>해! ...그런데 그때—');
+          later(startInject, 1500);
+        }
+      };
+      knows.forEach(k => k.addEventListener('pointerdown', () => confirmKnow(k)));
+      chkT = setTimeout(() => knows.forEach(confirmKnow), 15000);   // 소프트락 방지 — 15초 후 자동 확인
+
+      /* ── Phase 1 — 거짓 카드 + 차단 버튼 등장 ── */
+      const startInject = () => {
+        if (injectStarted) return; injectStarted = true;
+        card.classList.remove('hidden'); shield.classList.remove('hidden');
+        setCap('🤷‍♂️ 동혁이의 <b>거짓 데이터</b>가 노아에게 다가간다! <b>차단하기</b>를 눌러!');
+        FX.sting(); FX.vibrate(60);
+        autoT = setTimeout(() => split(), 9000);   // 안 누르고 있어도 결국 분열로
+      };
+
+      /* ── Phase 2 — 차단 버튼은 손을 피한다 (4번 도망) ── */
+      let dodge = 0, splitStarted = false;
+      const flee = e => {
+        if (splitStarted || !injectStarted) return;
+        if (e) e.preventDefault();
+        dodge++; Sound.pop();
+        shield.style.left = (70 + Math.random() * 620) + 'px';
+        shield.style.top = (170 + Math.random() * 150) + 'px';
+        setCap(['🛡️ 앗! 버튼이 손을 <b>쏙</b> 피했다!', '🛡️ 이상해... 아무리 눌러도 막을 수가 없어!',
+          '🛡️ 버튼이 계속 도망간다...!'][Math.min(dodge - 1, 2)]);
+        if (dodge >= 4) split();
+      };
+      shield.addEventListener('pointerenter', flee);
+      shield.addEventListener('pointerdown', flee);
+
+      /* ── Phase 3 — 거짓 카드 분열: 탭으로 터뜨리기 (마지막 1장은 못 막는다) ── */
+      const FRAG_POS = [[120, 110], [280, 70], [500, 70], [660, 110], [390, 170]];
+      const frags = [];
+      let fragDone = false;
+      const split = () => {
+        if (splitStarted) return; splitStarted = true;
+        clearTimeout(autoT);
+        shield.classList.add('gone');
+        card.classList.add('hidden');
+        setCap('🤷‍♂️ 동혁: "진짜라니까~ 진짜래도~!" — 카드가 <b>분열</b>했다! <b>탭해서 터뜨려!</b>');
+        Sound.error(); FX.vibrate(90);
+        FRAG_POS.forEach((p, i) => {
+          const f = document.createElement('div');
+          f.className = 'di-frag';
+          f.innerHTML = '한글 = <b>이순신?</b>';
+          f.style.left = (p[0] + Math.random() * 20 - 10) + 'px';
+          f.style.top = (p[1] + Math.random() * 16 - 8) + 'px';
+          const dur = 3.4 + Math.random() * 1.4;                     // 큐브까지 3.4~4.8초
+          f.style.transition = `left ${dur}s linear, top ${dur}s linear`;
+          scene.appendChild(f); frags.push(f);
+          f.addEventListener('pointerdown', () => {
+            if (fragDone || f.classList.contains('pop')) return;
+            const alive = frags.filter(x => !x.classList.contains('pop'));
+            if (alive.length <= 1) {                                 // 마지막 1장은 터지지 않는다
+              f.classList.remove('immune'); void f.offsetWidth; f.classList.add('immune');
+              setCap('앗...! 마지막 카드는 <b>터지지 않아</b>!');
+              Sound.error();
+              return;
+            }
+            f.classList.add('pop'); Sound.pop();
+            later(() => f.remove(), 380);
+          });
+          later(() => { f.style.left = '390px'; f.style.top = '300px'; }, 80 + i * 130);   // 큐브로 출발
+          later(() => { if (!fragDone && !f.classList.contains('pop')) arrive(f); }, dur * 1000 + 300 + i * 130);
+        });
+      };
+      const arrive = f => {
+        if (fragDone) return; fragDone = true;
+        frags.forEach(x => { if (x !== f) x.remove(); });
+        f.remove();
+        absorb();
+      };
+
+      /* ── Phase 4 — 오염: 슬롯 + 옆 지식 연쇄 지지직 (잘못된 데이터는 번진다) ── */
+      const absorb = () => {
+        cube.classList.add('corrupt'); slot.classList.add('corrupt');
+        flash.classList.add('on'); later(() => flash.classList.remove('on'), 220);
+        slot.querySelector('.di-slot-a').textContent = '이순신 장군';
+        slot.querySelector('.di-slot-ok').textContent = '❌';
+        Sound.error(); FX.vibrate([200, 80, 200, 80, 300]);
+        setCap('🤖 노아: "새로운 데이터입니다! 데이터베이스를 <b>업데이트</b>했습니다!"');
+        later(() => { minis[0].classList.remove('ok'); minis[0].classList.add('corrupt'); minis[0].textContent = '지구 = 둥글다 ⚠'; FX.sting(); }, 900);
+        later(() => {
+          minis[1].classList.remove('ok'); minis[1].classList.add('corrupt'); minis[1].textContent = '1 + 1 = 2 ⚠';
+          FX.sting(); setCap('오염이... <b>옆 지식까지</b> 번지고 있어!');
+        }, 1600);
+        later(quiz, 3100);
+      };
+
+      /* ── Phase 5 — 예측 퀴즈 → 플립 확인 → 폭소 → 선생님의 교정 ── */
+      const quiz = () => {
+        ov.querySelector('.di-quiz').classList.remove('hidden');
+        setCap('🔔 잠시 후, 국어 마무리 퀴즈 시간!');
+        let guessed = false;
+        ov.querySelectorAll('.di-guess .choice-btn').forEach(b => b.onclick = () => {
+          if (guessed) return; guessed = true;
+          Sound.pop();
+          ov.querySelector('.di-guess-q').classList.add('hidden');
+          ov.querySelector('.di-guess').classList.add('hidden');
+          setCap(b.textContent.includes('이순신')
+            ? '...나도 그럴 것 같아. 슬픈 예감이야.'
+            : '정답은 세종대왕이지만... 노아는 방금 <b>잘못 배웠잖아</b>.');
+          ov.querySelector('.di-flip').classList.remove('hidden');
+          later(() => {
+            ov.querySelector('.di-flip').classList.add('flip'); Sound.error();
+            later(() => {
+              ov.querySelector('.di-laugh').classList.remove('hidden');
+              Sound.pop(); Sound.tone(660, 0.1, 'square', 0.12); Sound.tone(880, 0.12, 'square', 0.12, 0.1);
+              FX.vibrate([60, 40, 60]);
+              setCap('👨‍🏫 "한글은 <b>세종대왕</b>께서 만드셨단다. 어디서 잘못 배웠니...?"');
+              ov.querySelector('.di-done').classList.remove('hidden');
+            }, 950);
+          }, 1300);
+        });
+      };
+      ov.querySelector('.di-done').onclick = () => { Sound.pop(); cleanup(); UI.close(ov); resolve(); };
+    });
+  },
+
+  /* ═══════ 🔧 노아 두뇌 데이터 교정실 (bias2 — dataInjector와 수미상관 · 무대 재사용) ═══════
+     도구화에선 차단 버튼이 도망쳐 오염을 못 막았지만, 존중에선 동혁의 사과 카드를
+     "내 손으로" 직접 탭해 슬롯에 꽂는다 → 슬롯·큐브가 빨강→파랑으로 정화,
+     지지직거리던 옆 지식들도 차례로 복구 → 퀴즈 재플립 "세종대왕입니다!" → 컨페티+박수.
+     교육 메시지: 오염은 못 막았지만, 교정은 내 손으로 할 수 있다. */
+  dataCorrector() {
+    return new Promise(resolve => {
+      const W = 780, H = 470;
+      const ov = UI.overlay(`
+        <div class="di-stage">
+          <div class="di-hud"><span class="di-chip">🧠 노아의 지식 데이터베이스 — 🔧 교정 모드</span></div>
+          <div class="di-cap"></div>
+          <div class="di-scenebox">
+            <div class="di-scene">
+              <div class="di-flash"></div>
+              <div class="di-slot corrupt" style="left:390px; top:56px;">
+                <span class="di-slot-key">한글 창제 =</span>
+                <b class="di-slot-a">이순신 장군</b><span class="di-slot-ok">❌</span></div>
+              <div class="di-mini corrupt" style="left:180px; top:140px;">지구 = 둥글다 ⚠</div>
+              <div class="di-mini corrupt" style="left:600px; top:140px;">1 + 1 = 2 ⚠</div>
+              <div class="di-cube corrupt" style="left:390px; top:300px;">
+                <div class="di-cube-face"></div></div>
+              <div class="di-card fix" style="left:150px; top:250px;">
+                <div class="di-card-t">🤷‍♂️ 동혁이의 사과와 함께</div>
+                <div class="di-card-b">한글 창제 = <b>세종대왕</b> 💙</div></div>
+              <div class="di-quiz hidden">
+                <p class="di-quiz-q">👨‍🏫 "다시 물어볼게요 — 우리 한글을 만드신 분은?"</p>
+                <div class="di-flip"><div class="di-flip-in">
+                  <div class="di-flip-f front">🤖 ???</div>
+                  <div class="di-flip-f back good">🤖 "세종대왕입니다!"</div>
+                </div></div>
+                <div class="di-cheer hidden">👏 딩동댕! 정확해요, 노아!</div>
+              </div>
+            </div>
+          </div>
+          <div class="ov-choices"><button class="choice-btn di-done hidden">내 손으로 고쳤어!</button></div>
+        </div>`, 'di-ov');
+      const sceneBox = ov.querySelector('.di-scenebox'), scene = ov.querySelector('.di-scene');
+      const fit = () => { const s = Math.min(sceneBox.clientWidth / W, sceneBox.clientHeight / H, 1.5) * 0.96; scene.style.transform = `scale(${s})`; };
+      window.addEventListener('resize', fit); fit(); setTimeout(fit, 120);
+      const cleanup = () => window.removeEventListener('resize', fit);
+
+      const cap = ov.querySelector('.di-cap'), card = ov.querySelector('.di-card'),
+            slot = ov.querySelector('.di-slot'), cube = ov.querySelector('.di-cube'),
+            flash = ov.querySelector('.di-flash'), minis = [...ov.querySelectorAll('.di-mini')];
+      const setCap = t => { cap.innerHTML = t; };
+      setCap('💙 동혁이가 <b>바른 데이터</b>를 가져왔어! <b>카드를 눌러</b> 노아의 지식을 고쳐 주자!');
+      Sound.pop();
+
+      let used = false;
+      card.addEventListener('pointerdown', () => {
+        if (used) return; used = true;
+        // ① 카드가 내 손끝에서 슬롯으로 날아가 꽂힌다
+        FX.whoosh();
+        card.style.left = '390px'; card.style.top = '56px';
+        setCap('바른 데이터가 들어간다...!');
+        setTimeout(() => {
+          card.classList.add('absorb');
+          flash.classList.add('on'); setTimeout(() => flash.classList.remove('on'), 220);
+          // ② 슬롯·큐브 정화 (빨강 → 파랑)
+          slot.querySelector('.di-slot-a').textContent = '세종대왕';
+          slot.querySelector('.di-slot-ok').textContent = '✅';
+          slot.classList.remove('corrupt'); slot.classList.add('heal');
+          cube.classList.remove('corrupt');
+          Sound.chime(); FX.vibrate([60, 40, 60]);
+          setCap('🤖 노아: "데이터를 교정합니다... <b>교정 완료!</b> 바르게 알려주셔서 감사합니다."');
+          setTimeout(() => slot.classList.remove('heal'), 1600);
+          // ③ 지지직거리던 옆 지식들도 차례로 복구
+          setTimeout(() => { minis[0].classList.remove('corrupt'); minis[0].textContent = '지구 = 둥글다 ✅'; Sound.tick(); }, 900);
+          setTimeout(() => {
+            minis[1].classList.remove('corrupt'); minis[1].textContent = '1 + 1 = 2 ✅'; Sound.tick();
+            setCap('오염됐던 지식들이 차례로 돌아온다...!');
+          }, 1500);
+          // ④ 퀴즈 재도전 — 이번엔 정답 플립 + 축하
+          setTimeout(() => {
+            ov.querySelector('.di-quiz').classList.remove('hidden');
+            setCap('🔔 국어 마무리 퀴즈 — 다시 한 번!');
+            setTimeout(() => {
+              ov.querySelector('.di-flip').classList.add('flip');
+              Sound.coin();
+              setTimeout(() => {
+                ov.querySelector('.di-cheer').classList.remove('hidden');
+                FX.confetti({ y: 0.35, count: 110 }); FX.cheer(); UI.hearts(6);
+                setCap('잘못 배운 것도, <b>내 손으로</b> 바르게 고칠 수 있어!');
+                ov.querySelector('.di-done').classList.remove('hidden');
+              }, 950);
+            }, 1400);
+          }, 2600);
+        }, 900);
+      });
+      ov.querySelector('.di-done').onclick = () => { Sound.pop(); cleanup(); UI.close(ov); resolve(); };
+    });
+  },
+
+  /* ═══════ 🛑 멈춰 버튼 / 🤚 허락 버튼 (모방 사건 스테이징 — 도구화/존중 행동판 수미상관) ═══════
+     같은 위치·같은 형태(큰 중앙 펄스 버튼)가 다시 등장하지만, 이번엔 결과가 갈린다:
+     mode 'tool'   : 🛑 멈춰! — 눌러도 "명령 대기 목록에 없는 행동입니다" + 버튼이 금 가며 부서짐 (무력감)
+                     안 누르면 7초 후 "(손이 움직이지 않았다...)" 자동 진행 → resolve('missed')
+     mode 'permit' : 🤚 노아가 먼저 허락을 구한다 — 이번엔 내 대답이 통한다. 누르면 즉시 진행 → resolve('granted')
+                     12초간 응답 없으면 부드럽게 자동 진행(소프트락 방지, 실패 연출 없음) → resolve('granted') */
+  stopButton(mode = 'tool') {
+    return new Promise(resolve => {
+      const permit = mode === 'permit';
+      const ov = UI.overlay(`
+        <div class="stopbtn-wrap">
+          <p class="stopbtn-hint">${permit ? '노아가 나의 대답을 기다리고 있어...' : '노아를 멈춰야 해...!'}</p>
+          <button class="stopbtn${permit ? ' permit' : ''}">${permit ? '🤚 괜찮아, 해도 돼!' : '🛑 멈춰!'}</button>
+          <div class="stopbtn-toast hidden${permit ? ' warm' : ''}"></div>
+        </div>`, 'stopbtn-ov');
+      const btn = ov.querySelector('.stopbtn'), toast = ov.querySelector('.stopbtn-toast');
+      const app = document.getElementById('app');
+      let used = false;
+      const fin = (v, delay) => setTimeout(() => { UI.close(ov); resolve(v); }, delay);
+
+      if (permit) {
+        const autoT = setTimeout(() => {                  // 대답이 늦어도 소프트락 없이 부드럽게 진행
+          if (used) return; used = true;
+          btn.classList.add('ok');
+          toast.textContent = '🤖 "천천히 괜찮아요! 그래도 여쭤봐서 다행이에요."';
+          toast.classList.remove('hidden');
+          fin('granted', 1500);
+        }, 12000);
+        btn.addEventListener('pointerdown', () => {        // 💙 존중: 내 대답이 실제로 통한다
+          if (used) return; used = true;
+          clearTimeout(autoT);
+          Sound.tick();
+          btn.classList.add('ok');
+          toast.textContent = '🤖 "허락해 줘서 고마워요!"';
+          toast.classList.remove('hidden');
+          Sound.chime();
+          fin('granted', 1200);
+        });
+        return;
+      }
+
+      const autoT = setTimeout(() => {                    // 손이 얼어붙은 경로 (tool 전용)
+        if (used) return; used = true;
+        toast.textContent = '(...손이 움직이지 않았다.)';
+        toast.classList.remove('hidden');
+        fin('missed', 1400);
+      }, 7000);
+      btn.addEventListener('pointerdown', () => {
+        if (used) return; used = true;
+        clearTimeout(autoT);
+        Sound.tick();
+        // 🔧 도구화: 슬로모 0.5초 → 거부 토스트 → 버튼이 부서진다
+        if (UI.motionOK()) {
+          app.style.transition = 'filter .15s'; app.style.filter = 'saturate(.25) brightness(.75)';
+          setTimeout(() => { app.style.filter = ''; setTimeout(() => { app.style.transition = ''; }, 200); }, 550);
+        }
+        setTimeout(() => {
+          toast.textContent = '⚠ 명령 대기 목록에 없는 행동입니다';
+          toast.classList.remove('hidden');
+          FX.sting(); FX.vibrate([160, 60, 160]);
+          this._shatterBtn(btn, ov);
+          fin('crushed', 1900);
+        }, 520);
+      });
+    });
+  },
+
+  /* 버튼이 유리처럼 6조각으로 깨져 떨어짐 (shatterPanel 축소판 — Web Animations, 미지원/모션줄이기 시 페이드) */
+  _shatterBtn(btn, ov) {
+    Sound.glass();
+    if (!UI.motionOK() || !btn.animate) { btn.style.opacity = 0.15; return; }
+    const r = btn.getBoundingClientRect(), or = ov.getBoundingClientRect();
+    const stage = document.createElement('div');
+    stage.style.cssText = `position:absolute;left:${r.left - or.left}px;top:${r.top - or.top}px;width:${r.width}px;height:${r.height}px;pointer-events:none;`;
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) {
+      const shard = btn.cloneNode(true);
+      const jx = (Math.random() * 10 - 5), jy = (Math.random() * 8 - 4);
+      shard.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;margin:0;pointer-events:none;';
+      shard.style.clipPath = `polygon(${i * 33.3 + jx}% ${j * 50}%, ${(i + 1) * 33.3 + jx}% ${j * 50 + jy}%, ${(i + 1) * 33.3}% ${(j + 1) * 50}%, ${i * 33.3}% ${(j + 1) * 50 + jy}%)`;
+      stage.appendChild(shard);
+      shard.animate([
+        { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+        { transform: `translate(${(i - 1) * 60 + Math.random() * 30 - 15}px, ${90 + j * 70 + Math.random() * 50}px) rotate(${(Math.random() * 2 - 1) * 120}deg)`, opacity: 0 },
+      ], { duration: 850 + Math.random() * 300, easing: 'cubic-bezier(.3,.1,.6,1)', fill: 'forwards' });
+    }
+    btn.style.visibility = 'hidden';
+    ov.appendChild(stage);                    // 좌표를 ov 기준으로 계산했으므로 ov에 직접 부착
+  },
+
   /* ═══════ 3-2 국어 맞춤법 대결 (노아가 반드시 승리 — 로직은 수학 대결 시절 그대로) ═══════ */
   mathBattle() {
     return new Promise(resolve => {
@@ -726,6 +1100,37 @@ const Mini = {
 
   /* ⏱ 미술 제한 시간 설정 (초) — 총 2분, 1분 경과 시 제출/도망 연출 활성화 */
   ART_TIME: { total: 120, enable: 60 },
+  /* 🎨 미술 색상 팔레트 (흰색은 뺌 — 흰 브러시는 🧽지우개 버튼으로 일원화) */
+  ART_COLORS: ['#343a40', '#e03131', '#f76707', '#fab005', '#2f9e44', '#1971c2', '#9c36b5'],
+
+  /* 캔버스 색상·펜·지우개·전체지우기 도구 바인딩 (artForced/artSelf 공용) — {getState 반영} */
+  _bindArtTools(ov, canvas, state) {
+    const ctx = this.bindDraw(canvas, () => state.erasing ? '#ffffff' : state.color, () => state.erasing ? 24 : state.size);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const eraBtn = ov.querySelector('.tool-eraser');
+    ov.querySelectorAll('.color-dot').forEach((d, i) => {
+      if (i === 0) d.classList.add('on');
+      d.onclick = () => {
+        state.color = d.dataset.c; state.erasing = false; eraBtn && eraBtn.classList.remove('on');
+        ov.querySelectorAll('.color-dot').forEach(x => x.classList.remove('on')); d.classList.add('on'); Sound.pop();
+      };
+    });
+    if (eraBtn) eraBtn.onclick = () => {
+      state.erasing = true; eraBtn.classList.add('on');
+      ov.querySelectorAll('.color-dot').forEach(x => x.classList.remove('on')); Sound.pop();
+    };
+    const sizeBtn = ov.querySelector('[data-size]');
+    if (sizeBtn) sizeBtn.onclick = e => { state.size = state.size === 5 ? 14 : 5; e.target.textContent = state.size === 5 ? '🖌 굵게' : '🖌 얇게'; };
+    const clearBtn = ov.querySelector('.art-clear');
+    if (clearBtn) clearBtn.onclick = async () => {
+      const ok = await UI.choice('🗑️ 전체 지우기', [
+        { label: '네, 전부 지울게요', value: true },
+        { label: '아니요, 그대로 둘게요', value: false },
+      ], '지금까지 그린 그림이 모두 사라져요. 정말 지울까요?');
+      if (ok) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); Sound.pop(); }
+    };
+    return ctx;
+  },
 
   /* 카운트다운 타이머 — el에 남은 시간 표시, enable초 경과 시 onEnable, 종료 시 onEnd. stop 함수 반환 */
   startTimer(el, totalSec, enableSec, onEnable, onEnd) {
@@ -775,17 +1180,23 @@ const Mini = {
     return new Promise(resolve => {
       const T = this.ART_TIME;
       const ov = UI.overlay(`
-        <div class="ov-panel" style="max-width:min(860px,96vw);">
-          <h2 class="mini-title">🎨 미술 시간 — 제시어: '학교'를 간단하게 표현해봅시다.</h2>
+        <div class="ov-panel" style="max-width:min(820px,96vw);">
+          <h2 class="mini-title">🎨 미술 시간 — 제시어: '나의 학교'를 간단하게 표현해봅시다.</h2>
           <div class="art-timerbar"><span class="art-timer">⏱ 2:00</span>
             <span class="art-hint">먼저 <b>내 그림</b>을 그려 보세요! (1분 후 제출할 수 있어요)</span></div>
-          <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
-            <div><p>✏️ 내가 그리는 그림</p><canvas class="draw-canvas my-art" width="300" height="220" style="width:min(300px,42vw);"></canvas></div>
-            <div><p>🤖 노아가 꺼낸 그림</p>
-              <div class="noah-art-box">
-                <canvas class="draw-canvas noah-art" width="300" height="220" style="width:min(300px,42vw); cursor:default;"></canvas>
-                <div class="noah-cover">💌<span>노아의 그림은<br>타이머가 끝나면<br>공개돼요!</span></div>
-              </div>
+          <p>✏️ 내가 그리는 그림</p>
+          <canvas class="draw-canvas my-art" width="640" height="380" style="width:min(640px,88vw);"></canvas>
+          <div class="color-row">
+            ${this.ART_COLORS.map(c => `<div class="color-dot" data-c="${c}" style="background:${c};"></div>`).join('')}
+            <button class="choice-btn tool-btn" style="padding:6px 12px; font-size:14px;" data-size>🖌 굵게</button>
+            <button class="choice-btn tool-btn tool-eraser" style="padding:6px 12px; font-size:14px;">🧽 지우개</button>
+            <button class="choice-btn tool-btn art-clear" style="padding:6px 12px; font-size:14px;">🗑️ 전체 지우기</button>
+          </div>
+          <div class="noah-art-row">
+            <p>🤖 노아가 꺼낸 그림</p>
+            <div class="noah-art-box">
+              <canvas class="draw-canvas noah-art" width="240" height="160" style="width:min(240px,50vw); cursor:default;"></canvas>
+              <div class="noah-cover">💌<span>1분이 남으면 공개돼요!</span></div>
             </div>
           </div>
           <p class="ov-sub">그림을 다 그렸으면, 제출할 작품을 선택하세요!</p>
@@ -795,7 +1206,8 @@ const Mini = {
           </div>
           <p class="ov-sub magnet-msg"></p>
         </div>`);
-      this.bindDraw(ov.querySelector('.my-art'), () => '#343a40', () => 4);
+      // 색상·펜·지우개·전체지우기 공용 도구 (존중편 미술과 동일한 큰 캔버스 + 팔레트)
+      this._bindArtTools(ov, ov.querySelector('.my-art'), { color: '#343a40', size: 5, erasing: false });
       this.drawNoahArt(ov.querySelector('.noah-art'));
       const myBtn = ov.querySelector('.my-btn'), noahBtn = ov.querySelector('.noah-btn'),
             msg = ov.querySelector('.magnet-msg'), cover = ov.querySelector('.noah-cover'),
@@ -817,13 +1229,13 @@ const Mini = {
       myBtn.addEventListener('pointerdown', flee);
       noahBtn.onclick = () => { if (noahBtn.disabled) return; Sound.chime(); stop(); UI.close(ov); resolve(); };
       const stop = this.startTimer(ov.querySelector('.art-timer'), T.total, T.enable,
-        () => {                                    // 1분 경과: 제출 버튼 + 도망 연출 활성화
+        () => {                                    // 1분 남음: 제출 버튼 + 도망 연출 활성화 + 노아 그림 공개
           active = true; myBtn.disabled = false; noahBtn.disabled = false;
-          hint.innerHTML = '이제 <b>제출</b>할 수 있어요! 어떤 그림을 낼까요?';
-        },
-        () => {                                    // 타이머 종료: 노아 그림 공개
           cover.classList.add('hidden');
-          hint.innerHTML = '⏰ 시간 종료! 노아의 완벽한 그림이 공개됐어요...';
+          hint.innerHTML = '노아의 완벽한 그림이 공개됐어요! 어떤 그림을 낼까요?';
+        },
+        () => {                                    // 타이머 종료
+          hint.innerHTML = '⏰ 시간 종료! 제출할 작품을 골라 주세요.';
         });
     });
   },
@@ -832,32 +1244,26 @@ const Mini = {
   artSelf() {
     return new Promise(resolve => {
       const T = this.ART_TIME;
-      const colors = ['#343a40', '#e03131', '#f76707', '#fab005', '#2f9e44', '#1971c2', '#9c36b5', '#ffffff'];
-      let color = '#343a40', size = 5;
       const ov = UI.overlay(`
         <div class="ov-panel" style="max-width:min(820px,96vw);">
-          <h2 class="mini-title">🎨 나만의 '학교' 그리기!</h2>
+          <h2 class="mini-title">🎨 노아와 함께 있는 내 모습을 상상하며 그리기!</h2>
           <div class="art-timerbar"><span class="art-timer">⏱ 2:00</span>
             <span class="art-hint">천천히 그려 보세요! (1분이 남았을 때 미리 제출할 수 있어요)</span></div>
           <p style="background:#e7f5ff; border-radius:12px; padding:8px 12px; color:#1971c2; font-size:15px;">
-            💡 노아의 참고 아이디어: 학교 건물 · 운동장 · 함께 웃는 친구들 · 파란 하늘 · 큰 나무<br>
-            🤖 "참고만 하세요! 완성은 %NAME%님의 손과 마음으로!"</p>
+            💡 노아의 한마디: 저(노아)와 함께 있을때, 여러분과 저는 어떤 모습일까요? 😊 😭 😐 😌 😄<br>
+            🤖 "완성은 %NAME%님의 손과 마음으로 직접 해봅시다!"</p>
           <canvas class="draw-canvas free-art" width="640" height="380" style="width:min(640px,88vw);"></canvas>
           <div class="color-row">
-            ${colors.map(c => `<div class="color-dot" data-c="${c}" style="background:${c};"></div>`).join('')}
-            <button class="choice-btn" style="padding:4px 12px; font-size:14px;" data-size>🖌 굵게</button>
+            ${this.ART_COLORS.map(c => `<div class="color-dot" data-c="${c}" style="background:${c};"></div>`).join('')}
+            <button class="choice-btn tool-btn" style="padding:6px 12px; font-size:14px;" data-size>🖌 굵게</button>
+            <button class="choice-btn tool-btn tool-eraser" style="padding:6px 12px; font-size:14px;">🧽 지우개</button>
+            <button class="choice-btn tool-btn art-clear" style="padding:6px 12px; font-size:14px;">🗑️ 전체 지우기</button>
           </div>
           <div class="ov-choices"><button class="choice-btn done" disabled>🖼️ 완성했어요!</button></div>
         </div>`);
       ov.innerHTML = ov.innerHTML.replace(/%NAME%/g, State.get('name'));
       const canvas = ov.querySelector('.free-art');
-      const ctx = this.bindDraw(canvas, () => color, () => size);
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ov.querySelectorAll('.color-dot').forEach((d, i) => {
-        if (i === 0) d.classList.add('on');
-        d.onclick = () => { color = d.dataset.c; ov.querySelectorAll('.color-dot').forEach(x => x.classList.remove('on')); d.classList.add('on'); };
-      });
-      ov.querySelector('[data-size]').onclick = e => { size = size === 5 ? 14 : 5; e.target.textContent = size === 5 ? '🖌 굵게' : '🖌 얇게'; };
+      const ctx = this._bindArtTools(ov, canvas, { color: '#343a40', size: 5, erasing: false });
       const doneBtn = ov.querySelector('.done'), hint = ov.querySelector('.art-hint');
       let submitted = false;
       const submit = () => {
@@ -1111,8 +1517,8 @@ const Mini = {
     return new Promise(resolve => {
       const ov = UI.overlay(`
         <div class="ov-panel" style="max-width:min(760px,96vw);">
-          <h3 class="mini-title">🖋 나의 다짐을 담아 서명 크게 쓰기!</h3>
-          <p class="ov-sub">약속을 지키겠다는 마음을 담아, <나의 이름>을 크게 적어보세요.</p>
+          <h3 class="mini-title">🖋 <인공지능의 올바른 사용에 대한 다짐>을 담아 서명 크게 쓰기!</h3>
+          <p class="ov-sub">약속을 지키겠다는 마음을 담아, <나의 이름>을 크게 또박또박 적어봅시다.</p>
           <canvas class="draw-canvas sig" width="680" height="280" style="width:min(680px,90vw);"></canvas>
           <div class="ov-choices" style="flex-direction:row; justify-content:center;">
             <button class="choice-btn clear">🧽 다시 쓰기</button>

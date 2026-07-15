@@ -1,6 +1,5 @@
 /* ═══════════ Notebook — 📔 도덕 수첩 (원칙 카드 팝업 & 열람 UI) ═══════════ */
-const Notebook = {
-
+const Notebook = { // <--- 이 부분이 누락되어 있으면 에러가 납니다!
   /* ───── 획득 시 전면 카드 팝업 — 원칙 전문을 읽고 닫아야 진행 ───── */
   showCard(item) {
     return new Promise(resolve => {
@@ -37,12 +36,16 @@ const Notebook = {
     });
   },
 
-  /* ───── 수첩 열람 (HUD 버튼 / 메인 화면 버튼 공용) ───── */
-  open() {
-    const owned = new Set(State.notebookAll());
+  /* ───── 수첩 열람 ─────
+     cumulative=false(HUD): 이번 모험에서 모은 것만 → 새 게임은 0/9부터 (수집의 재미)
+     cumulative=true(메인 화면용): 이전 회차까지 누적 표시 (재플레이 동기) */
+  open(cumulative = false) {
     const sessionCount = DATA.moralItems.filter(i => State.has(i.id)).length;
+    const owned = cumulative
+      ? new Set(State.notebookAll())
+      : new Set(DATA.moralItems.filter(i => State.has(i.id)).map(i => i.id));
     const totalOwned = DATA.moralItems.filter(i => owned.has(i.id)).length;
-    const hasOldRecords = totalOwned > sessionCount;
+    const hasOldRecords = cumulative && totalOwned > sessionCount;
     const wasEnabled = Player.enabled;
     Player.enabled = false;
 
@@ -66,10 +69,20 @@ const Notebook = {
       subEl.textContent = '— ' + DATA.moralSets[setKey].sub + ' —';
       cardsEl.innerHTML = DATA.moralItems.filter(i => i.set === setKey).map(i =>
         owned.has(i.id)
-          ? `<div class="nb-card"><span class="nb-ic">${i.icon}</span>
-               <div><b>${i.title}</b><p>${i.text}</p></div></div>`
-          : `<div class="nb-card locked"><span class="nb-ic">❓</span>
-               <div><b>? ? ?</b><p>아직 발견하지 못했어요 — ${i.hint} 찾아보세요!</p></div></div>`
+          ? `<div class="nb-card">
+           <span class="nb-ic">${i.icon}</span>
+           <div>
+             <b>${i.title}</b>
+             <p>${i.text}</p>
+           </div>
+         </div>`
+      : `<div class="nb-card locked">
+           <span class="nb-ic">❓</span>
+           <div>
+             <b>? ? ?</b>
+             <p>아직 발견하지 못했어요 — ${i.hint} 찾아보세요!</p>
+           </div>
+         </div>`
       ).join('');
     };
     ov.querySelectorAll('.nb-tab').forEach(btn => {
