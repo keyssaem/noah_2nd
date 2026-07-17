@@ -263,7 +263,7 @@ const Endings = {
         <div style="text-align:center; max-width:min(560px,94vw);">
           <div style="font-size:70px; filter:grayscale(1) brightness(.5);">🤖</div>
           <h3 style="color:#fff; font-size:clamp(20px,3.4vw,30px); margin:14px 0;">노아가 강제 종료되었습니다.</h3>
-          <p style="color:#adb5bd; margin-bottom:14px;">재시작하려면 선생님께 비밀 코드 4자리를 여쭤보고, <br> 다이얼을 돌려 맞춰 주세요.</p>
+          <p style="color:#adb5bd; margin-bottom:14px;">재시작하려면 앞에 있는 [다음 활동지]를 가져가서 비밀 코드 4자리를 확인하고, <br> 다이얼을 돌려 맞춰 주세요.</p>
           <div class="safe-dials"></div>
           <div class="ov-choices" style="flex-direction:row; justify-content:center;">
             <button class="choice-btn hint">💡 힌트 보기</button>
@@ -299,7 +299,7 @@ const Endings = {
 
       ov.querySelector('.hint').onclick = () => {
         Sound.chime();
-        msg.innerHTML = '👩\u200D🏫 선생님의 귓속말: "노아가 우리와 되고 싶은 사이는...<br>숫자로 <b>칠(7)·구(9)·사(4)·이(2)</b> 라고 읽는단다!"';
+        msg.innerHTML = '👩\u200D🏫 선생님의 귓속말: "노아가 우리와 되고 싶은 사이를 네 자리 숫자로 표현하면? (조용히 다음 활동지 가져가기)';
       };
       let done = false;
       ov.querySelector('.go').onclick = async () => {
